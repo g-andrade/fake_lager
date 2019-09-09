@@ -55,10 +55,10 @@ parse_transform(AST, Options) ->
     _ = check_for_unsupported_options(Options),
 
     %write_terms("ast_before.txt", AST),
-    {attribute, _Line, module, Module} = lists:keyfind(module, 3, AST),
+    {attribute, _, module, Module} = lists:keyfind(module, 3, AST),
     File =
         case lists:keyfind(file, 3, AST) of
-            {attribute, _Line, file, DefinedFile} ->
+            {attribute, _, file, DefinedFile} ->
                 DefinedFile;
             false ->
                 undefined

@@ -1,0 +1,15 @@
+{application, lager,
+ [{description, "An OTP application"},
+  {vsn, "0.0.0"},
+  {registered, []},
+  {mod, {lager_app, []}},
+  {applications,
+   [kernel,
+    stdlib
+   ]},
+  {env,[]},
+  {modules, []},
+
+  {pkg_name, 'fake-lager'},
+  {links, []}
+ ]}.

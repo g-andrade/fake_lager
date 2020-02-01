@@ -86,7 +86,7 @@
 %% Record and Type Definitions
 %%-------------------------------------------------------------------
 
--type log_level() :: none | debug | info | notice | warning | error | critical | alert | emergency.
+-type log_level() :: none | logger:level().
 
 %%-------------------------------------------------------------------
 %% API Function Definitions

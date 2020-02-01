@@ -76,15 +76,15 @@
          {error_unsafe, error}, {critical_unsafe, critical}, {alert_unsafe, alert}, 
          {emergency_unsafe, emergency}]).
 
-%-define(DEBUG, 128).
-%-define(INFO, 64).
-%-define(NOTICE, 32).
-%-define(WARNING, 16).
-%-define(ERROR, 8).
-%-define(CRITICAL, 4).
-%-define(ALERT, 2).
-%-define(EMERGENCY, 1).
-%-define(LOG_NONE, 0).
+-define(DEBUG, 128).
+-define(INFO, 64).
+-define(NOTICE, 32).
+-define(WARNING, 16).
+-define(ERROR, 8).
+-define(CRITICAL, 4).
+-define(ALERT, 2).
+-define(EMERGENCY, 1).
+-define(LOG_NONE, 0).
 
 -define(LEVEL2NUM(Level),
         case Level of

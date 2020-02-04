@@ -26,7 +26,7 @@ new(Msg, {MSec, Sec, USec}, Level, Metadata, _Destinations) ->
     #{level => Level, msg => {string, Msg}, meta => Meta}.
 
 -spec new(list(), lager:log_level(), [tuple()], list()) -> lager_msg().
-new(_Msg, _Level, _Metadata, _Destinations) ->
+new(_Msg, none, _Metadata, _Destinations) ->
     error(nosup);
 new(Msg, Level, Metadata, _Destinations) ->
     Time = logger:timestamp(),

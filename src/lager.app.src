@@ -2,7 +2,7 @@
  [{description, "An OTP application"},
   {vsn, "0.0.0"},
   {registered, []},
-  {mod, {lager_app, []}},
+  {mod, {fake_lager_app, []}},
   {applications,
    [kernel,
     stdlib

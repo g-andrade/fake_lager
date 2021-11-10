@@ -19,7 +19,7 @@
 %% DEALINGS IN THE SOFTWARE.
 
 %% @private
--module(lager_app).
+-module(fake_lager_app).
 -behaviour(application).
 
 %%-------------------------------------------------------------------
@@ -42,7 +42,7 @@
 
 -spec start(application:start_type(), term()) -> {ok, pid()}.
 start(_StartType, _StartArgs) ->
-    lager_sup:start_link().
+    fake_lager_sup:start_link().
 
 -spec stop(term()) -> ok.
 stop(_State) ->

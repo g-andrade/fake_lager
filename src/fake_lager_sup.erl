@@ -19,7 +19,7 @@
 %% DEALINGS IN THE SOFTWARE.
 
 %% @private
--module(lager_sup).
+-module(fake_lager_sup).
 -behaviour(supervisor).
 
 %% ------------------------------------------------------------------
@@ -68,14 +68,5 @@ init([]) ->
            intensity => 10,
            period => 1
          },
-    ChildSpecs = [lager_event_child_spec()],
+    ChildSpecs = [],
     {ok, {SupFlags, ChildSpecs}}.
-
-%% ------------------------------------------------------------------
-%% Internal Function Definitions
-%% ------------------------------------------------------------------
-
-lager_event_child_spec() ->
-    #{ id => lager_event,
-       start => {lager_event, start_link, []}
-     }.

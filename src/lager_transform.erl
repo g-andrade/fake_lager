@@ -82,7 +82,7 @@ map_ast_statement(Statement, _Context) ->
     Statement.
 
 walk_function_statements({call, Line,
-                          {remote, _RemoteLine,
+                          {remote, RemoteLine,
                            {atom, _ModuleLine, Module},
                            {atom, _FunctionLine, Function}}=InvocationClause,
                           Args},
@@ -98,7 +98,9 @@ walk_function_statements({call, Line,
         false ->
             {call, Line, InvocationClause, MappedArgs};
         true
-          when Function =/= none -> % TODO filter out `none' calls?
+          when Function =:= none -> % replace with `ok'
+            {atom, RemoteLine, ok};
+        true ->
             transform_call(Line, Function, MappedArgs, Context);
         {true_but_unsafe, {_,Level}} ->
             transform_call(Line, Level, MappedArgs, Context)

@@ -73,18 +73,18 @@ parse_transform(AST, Options) ->
 %% Internal Function Definitions - Tree Walking
 %%-------------------------------------------------------------------
 
-map_ast_statement({function, Line, Name, Arity, Clauses}, Context) ->
+map_ast_statement({function, Anno, Name, Arity, Clauses}, Context) ->
     #module_context{name = Module, file = File} = Context,
     FunctionContext = #function_context{ module = Module, file = File, name = Name, arity = Arity },
     MappedClauses = [walk_function_statements(Clause, FunctionContext) || Clause <- Clauses],
-    {function, Line, Name, Arity, MappedClauses};
+    {function, Anno, Name, Arity, MappedClauses};
 map_ast_statement(Statement, _Context) ->
     Statement.
 
-walk_function_statements({call, Line,
-                          {remote, RemoteLine,
-                           {atom, _ModuleLine, Module},
-                           {atom, _FunctionLine, Function}}=InvocationClause,
+walk_function_statements({call, Anno,
+                          {remote, RemoteAnno,
+                           {atom, _ModuleAnno, Module},
+                           {atom, _FunctionAnno, Function}}=InvocationClause,
                           Args},
                          Context) ->
     Arity = length(Args),
@@ -96,14 +96,14 @@ walk_function_statements({call, Line,
           {true_but_unsafe, lists:keyfind(Function, 1, ?LEVELS_UNSAFE)})
     of
         false ->
-            {call, Line, InvocationClause, MappedArgs};
+            {call, Anno, InvocationClause, MappedArgs};
         true
           when Function =:= none -> % replace with `ok'
-            {atom, RemoteLine, ok};
+            {atom, RemoteAnno, ok};
         true ->
-            transform_call(Line, Function, MappedArgs, Context);
+            transform_call(Anno, Function, MappedArgs, Context);
         {true_but_unsafe, {_,Level}} ->
-            transform_call(Line, Level, MappedArgs, Context)
+            transform_call(Anno, Level, MappedArgs, Context)
     end;
 walk_function_statements(Statement, Context) when is_tuple(Statement) ->
     % very lazy way of walking the whole thing without explicit patterning
@@ -120,18 +120,18 @@ walk_function_statements(StatementPart, _Context) ->
 %% Internal Function Definitions - Transformation of Logging Calls
 %%-------------------------------------------------------------------
 
-transform_call(Line, Level, Args, Context) ->
-    TransformedArgs = transform_call_args(Line, Args, Context),
-    NewInvocationClause = {remote, Line, {atom,Line,logger}, {atom,Line,Level}},
-    {call, Line, NewInvocationClause, TransformedArgs}.
+transform_call(Anno, Level, Args, Context) ->
+    TransformedArgs = transform_call_args(Anno, Args, Context),
+    NewInvocationClause = {remote, Anno, {atom,Anno,logger}, {atom,Anno,Level}},
+    {call, Anno, NewInvocationClause, TransformedArgs}.
 
-transform_call_args(Line, Args, Context) ->
-    Metadata = logging_call_metadata(Line, Args, Context),
+transform_call_args(Anno, Args, Context) ->
+    Metadata = logging_call_metadata(Anno, Args, Context),
     case is_formatting_prepararion_presumably_expensive(Args) of
         false ->
-            transform_call_args_with_immediate_formatting(Line, Args, Metadata);
+            transform_call_args_with_immediate_formatting(Anno, Args, Metadata);
         true ->
-            transform_call_args_with_lazy_formatting(Line, Args, Metadata)
+            transform_call_args_with_lazy_formatting(Anno, Args, Metadata)
     end.
 
 is_formatting_prepararion_presumably_expensive(Args) ->
@@ -145,10 +145,10 @@ is_formatting_prepararion_presumably_expensive(Args) ->
             orelse is_term_evaluation_presumably_expensive(FmtArgs)
     end.
 
-transform_call_args_with_immediate_formatting(Line, Args, Metadata) ->
+transform_call_args_with_immediate_formatting(Anno, Args, Metadata) ->
     case Args of
         [Fmt] ->
-            FmtArgs = {nil,Line}, % empty list
+            FmtArgs = {nil,Anno}, % empty list
             [Fmt, FmtArgs, Metadata];
         [Fmt, FmtArgs] ->
             [Fmt, FmtArgs, Metadata];
@@ -156,32 +156,32 @@ transform_call_args_with_immediate_formatting(Line, Args, Metadata) ->
             [Fmt, FmtArgs, Metadata]
     end.
 
-transform_call_args_with_lazy_formatting(Line, Args, Metadata) ->
+transform_call_args_with_lazy_formatting(Anno, Args, Metadata) ->
     case Args of
         [Fmt] ->
-            FmtArgs = {nil,Line}, % empty list
-            {MsgFun, MsgArgs} = lazy_message_fun_and_args(Line, Fmt, FmtArgs),
+            FmtArgs = {nil,Anno}, % empty list
+            {MsgFun, MsgArgs} = lazy_message_fun_and_args(Anno, Fmt, FmtArgs),
             [MsgFun, MsgArgs, Metadata];
         [Fmt, FmtArgs] ->
-            {MsgFun, MsgArgs} = lazy_message_fun_and_args(Line, Fmt, FmtArgs),
+            {MsgFun, MsgArgs} = lazy_message_fun_and_args(Anno, Fmt, FmtArgs),
             [MsgFun, MsgArgs, Metadata];
         [_, Fmt, FmtArgs] ->
-            {MsgFun, MsgArgs} = lazy_message_fun_and_args(Line, Fmt, FmtArgs),
+            {MsgFun, MsgArgs} = lazy_message_fun_and_args(Anno, Fmt, FmtArgs),
             [MsgFun, MsgArgs, Metadata]
     end.
 
-lazy_message_fun_and_args(Line, Fmt, FmtArgs) ->
-    Fun = lazy_message_fun(Line, Fmt, FmtArgs),
-    Args = {atom, Line, no_args},
+lazy_message_fun_and_args(Anno, Fmt, FmtArgs) ->
+    Fun = lazy_message_fun(Anno, Fmt, FmtArgs),
+    Args = {atom, Anno, no_args},
     {Fun, Args}.
 
-lazy_message_fun(Line, Fmt, FmtArgs) ->
-    {'fun', Line, % anonymous fun declaration
+lazy_message_fun(Anno, Fmt, FmtArgs) ->
+    {'fun', Anno, % anonymous fun declaration
      {clauses,
-      [{clause, Line,
-        [{atom, Line, no_args}],       % fun arguments pattern (`no_args')
+      [{clause, Anno,
+        [{atom, Anno, no_args}],       % fun arguments pattern (`no_args')
         [],                            % fun guards (none)
-        [{tuple, Line, [Fmt, FmtArgs]} % fun body (`{Fmt, FmtArgs}')
+        [{tuple, Anno, [Fmt, FmtArgs]} % fun body (`{Fmt, FmtArgs}')
         ]}
       ]}
     }.
@@ -190,50 +190,51 @@ lazy_message_fun(Line, Fmt, FmtArgs) ->
 %% Internal Function Definitions - Logging Call Metadata
 %%-------------------------------------------------------------------
 
-logging_call_metadata(Line, Args, Context) ->
-    BaseMetadata = base_call_metadata(Line, Context),
+logging_call_metadata(Anno, Args, Context) ->
+    BaseMetadata = base_call_metadata(Anno, Context),
     case Args of
         [_Fmt] ->
             BaseMetadata;
         [_Fmt, _FmtArgs] ->
             BaseMetadata;
         [ExtraMetadataList, _Fmt, _FmtArgs] ->
-            extended_call_metadata(Line, BaseMetadata, ExtraMetadataList)
+            extended_call_metadata(Anno, BaseMetadata, ExtraMetadataList)
     end.
 
-base_call_metadata(Line, Context) ->
-    {map, Line,
+base_call_metadata(Anno, Context) ->
+    Line = erl_anno:line(Anno),
+    {map, Anno,
      [% mfa => {module(), atom(), arity()}
-      {map_field_assoc, Line,
-       {atom, Line, mfa},
-       {tuple, Line,
-        [{atom, Line, Context#function_context.module},
-         {atom, Line, Context#function_context.name},
-         {integer, Line, Context#function_context.arity}
+      {map_field_assoc, Anno,
+       {atom, Anno, mfa},
+       {tuple, Anno,
+        [{atom, Anno, Context#function_context.module},
+         {atom, Anno, Context#function_context.name},
+         {integer, Anno, Context#function_context.arity}
         ]}}]
 
      % file => string()
      ++ case Context#function_context.file of
             undefined -> [];
             File ->
-                [{map_field_assoc, Line,
-                  {atom, Line, file},
-                  {string, Line, File}}]
+                [{map_field_assoc, Anno,
+                  {atom, Anno, file},
+                  {string, Anno, File}}]
         end
 
      % line => integer()
-     ++ [{map_field_assoc, Line,
-          {atom, Line, line},
-          {integer, Line, Line}}]
+     ++ [{map_field_assoc, Anno,
+          {atom, Anno, line},
+          {integer, Anno, Line}}]
     }.
 
-extended_call_metadata(Line, BaseMetadata, ExtraMetadataList) ->
+extended_call_metadata(Anno, BaseMetadata, ExtraMetadataList) ->
     case transform_metadata_list_into_map_field_associations(ExtraMetadataList) of
         {true, ExtraMetadataAssociations} ->
-            {map, Line, BaseMetadataAssociations} = BaseMetadata,
-            {map, Line, BaseMetadataAssociations ++ ExtraMetadataAssociations};
+            {map, Anno, BaseMetadataAssociations} = BaseMetadata,
+            {map, Anno, BaseMetadataAssociations ++ ExtraMetadataAssociations};
         false ->
-            runtime_merged_extended_call_metadata(Line, BaseMetadata, ExtraMetadataList)
+            runtime_merged_extended_call_metadata(Anno, BaseMetadata, ExtraMetadataList)
     end.
 
 transform_metadata_list_into_map_field_associations(ExtraMetadataList) ->
@@ -241,8 +242,8 @@ transform_metadata_list_into_map_field_associations(ExtraMetadataList) ->
 
 transform_metadata_list_into_map_field_associations_recur(Clause, Acc) ->
     case Clause of
-        {cons, ConsLine, {tuple,_,[{atom,_,_}=KeyTerm,ValueTerm]}, NextClause} ->
-            Assoc = {map_field_assoc, ConsLine, KeyTerm, ValueTerm},
+        {cons, ConsAnno, {tuple,_,[{atom,_,_}=KeyTerm,ValueTerm]}, NextClause} ->
+            Assoc = {map_field_assoc, ConsAnno, KeyTerm, ValueTerm},
             UpdatedAcc = [Assoc | Acc],
             transform_metadata_list_into_map_field_associations_recur(NextClause, UpdatedAcc);
 
@@ -254,13 +255,13 @@ transform_metadata_list_into_map_field_associations_recur(Clause, Acc) ->
             false
     end.
 
-runtime_merged_extended_call_metadata(Line, BaseMetadata, ExtraMetadataList) ->
+runtime_merged_extended_call_metadata(Anno, BaseMetadata, ExtraMetadataList) ->
     % maps:merge(ExtraMetadata, BaseMetadata)
-    {call, Line,
-     {remote, Line, {atom,Line,maps}, {atom,Line,merge}},
+    {call, Anno,
+     {remote, Anno, {atom,Anno,maps}, {atom,Anno,merge}},
 
      [% Map1 - maps:from_list(ExtraMetadataList)
-      {call, Line, {remote, Line, {atom,Line,maps}, {atom,Line,from_list}}, [ExtraMetadataList]},
+      {call, Anno, {remote, Anno, {atom,Anno,maps}, {atom,Anno,from_list}}, [ExtraMetadataList]},
 
       % Map2 - BaseMetadata
       BaseMetadata
@@ -284,25 +285,25 @@ check_for_unsupported_options(Options) ->
       Options).
 
 % XXX: should binary construction be considered expensive?
-is_term_evaluation_presumably_expensive({call, _Line, _InvocationClause, _Args}) ->
+is_term_evaluation_presumably_expensive({call, _Anno, _InvocationClause, _Args}) ->
     % any function call
     true;
-is_term_evaluation_presumably_expensive({'receive', _Line, _Patterns}) ->
+is_term_evaluation_presumably_expensive({'receive', _Anno, _Patterns}) ->
     % receive pattern
     true;
-is_term_evaluation_presumably_expensive({'receive', _Line, _Patterns, _Timeout, _TimeoutHandlers}) ->
+is_term_evaluation_presumably_expensive({'receive', _Anno, _Patterns, _Timeout, _TimeoutHandlers}) ->
     % receive pattern (with timeouts)
     true;
-is_term_evaluation_presumably_expensive({op, _Line, _Pid, _Arg}) ->
+is_term_evaluation_presumably_expensive({op, _Anno, _Pid, _Arg}) ->
     % unary operator (e.g. `-')
     true;
-is_term_evaluation_presumably_expensive({op, _Line, _Pid, _Arg1, _Arg2}) ->
+is_term_evaluation_presumably_expensive({op, _Anno, _Pid, _Arg1, _Arg2}) ->
     % binary operator (e.g. `+')
     true;
-is_term_evaluation_presumably_expensive({'case', _Line, _Expression, _Patterns}) ->
+is_term_evaluation_presumably_expensive({'case', _Anno, _Expression, _Patterns}) ->
     % case block
     true;
-is_term_evaluation_presumably_expensive({'if', _Line, _Patterns}) ->
+is_term_evaluation_presumably_expensive({'if', _Anno, _Patterns}) ->
     % if block
     true;
 is_term_evaluation_presumably_expensive(Term) when is_tuple(Term) ->
@@ -314,7 +315,7 @@ is_term_evaluation_presumably_expensive(_) ->
     false.
 
 %write_terms(FilenameSuffix, List) ->
-%    {attribute, _Line, module, Module} = lists:keyfind(module, 3, List),
+%    {attribute, _Anno, module, Module} = lists:keyfind(module, 3, List),
 %    Filename = atom_to_list(Module) ++ "." ++ FilenameSuffix,
 %    Format = fun(Term) -> io_lib:format("~tp.~n", [Term]) end,
 %    Text = lists:map(Format, List),

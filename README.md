@@ -13,18 +13,17 @@ the near future.
 
 Basic lager functionality is covered:
 
-  - distinct log levels
-  - lazy evaluation of logging calls
-  - process and message metadata
+- distinct log levels
+- lazy evaluation of logging calls
+- process and message metadata
 
 Yet to achieve:
 
-  - support for pretty printing of records and stacktraces
+- support for pretty printing of records and stacktraces
 
 Likely unattainable:
 
-  - multiple sinks
-  - tracing
+- multiple sinks
+- tracing
 
-**`fake-lager` is a work in progress** and is not yet ready for
-production.
+**`fake-lager` is experimental** and might not behave as you expect it to.

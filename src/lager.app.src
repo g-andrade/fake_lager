@@ -1,15 +1,18 @@
-{application, lager,
- [{description, "An OTP application"},
-  {vsn, "0.0.0"},
-  {registered, []},
-  {mod, {fake_lager_app, []}},
-  {applications,
-   [kernel,
-    stdlib
-   ]},
-  {env,[]},
-  {modules, []},
+{application, lager, [
+    {description, "A lager replacement that routes messages to logger instead"},
+    {vsn, git},
+    {registered, []},
+    {mod, {fake_lager_app, []}},
+    {applications, [
+        kernel,
+        stdlib
+    ]},
+    {env,[]},
+    {modules, []},
 
-  {pkg_name, 'fake-lager'},
-  {links, []}
- ]}.
+    {licenses, ["MIT"]},
+    {pkg_name, 'fake-lager'},
+    {links, [
+        {"GitHub", "https://github.com/g-andrade/fake-lager"}
+    ]}
+]}.

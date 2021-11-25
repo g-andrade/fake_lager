@@ -11,8 +11,8 @@
     {modules, []},
 
     {licenses, ["MIT"]},
-    {pkg_name, 'fake-lager'},
+    {pkg_name, 'fake_lager'},
     {links, [
-        {"GitHub", "https://github.com/g-andrade/fake-lager"}
+        {"GitHub", "https://github.com/g-andrade/fake_lager"}
     ]}
 ]}.

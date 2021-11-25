@@ -55,6 +55,7 @@ shell:
 
 doc:
 	./support/scripts/generate_docs.sh
+.PHONY: doc
 
 publish:
 publish: doc

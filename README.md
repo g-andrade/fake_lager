@@ -1,7 +1,7 @@
 # fake-lager
 
-[![](https://img.shields.io/hexpm/v/lager.svg?style=flat)](https://hex.pm/packages/lager)
-[![](https://github.com/g-andrade/lager/workflows/build/badge.svg)](https://github.com/g-andrade/lager/actions?query=workflow%3Abuild)
+[![](https://img.shields.io/hexpm/v/fake-lager.svg?style=flat)](https://hex.pm/packages/fake-lager)
+[![](https://github.com/g-andrade/fake-lager/workflows/build/badge.svg)](https://github.com/g-andrade/fake-lager/actions?query=workflow%3Abuild)
 
 `fake-lager` is a drop-in replacement for
 [`lager`](https://github.com/erlang-lager/lager/) that forwards logs to

@@ -60,8 +60,7 @@ start_link() ->
 %% supervisor Function Definitions
 %% ------------------------------------------------------------------
 
--spec init([]) -> {ok, {supervisor:sup_flags(),
-                        [supervisor:child_spec(), ...]}}.
+-spec init([]) -> {ok, {supervisor:sup_flags(), []}}.
 init([]) ->
     SupFlags =
         #{ strategy => one_for_one,

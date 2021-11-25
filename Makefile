@@ -19,7 +19,7 @@ clean:
 	@rebar3 clean -a
 .PHONY: clean
 
-check: xref find-unused-code lint dialyzer
+check: xref dialyzer
 .NOTPARALLEL: check
 .PHONY: check
 
@@ -46,14 +46,6 @@ dialyzer:
 xref:
 	@rebar3 as test xref
 .PHONY: xref
-
-lint:
-	@rebar3 as test lint
-.PHONY: lint
-
-find-unused-code:
-	@rebar3 as test hank
-.PHONY: lint
 
 ## Shell, docs and publication
 

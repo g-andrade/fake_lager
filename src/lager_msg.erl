@@ -11,6 +11,16 @@
 -export([metadata/1]).
 -export([destinations/1]).
 
+-ignore_xref(datetime/1).
+-ignore_xref(destinations/1).
+-ignore_xref(message/1).
+-ignore_xref(metadata/1).
+-ignore_xref(new/4).
+-ignore_xref(new/5).
+-ignore_xref(severity/1).
+-ignore_xref(severity_as_int/1).
+-ignore_xref(timestamp/1).
+
 -opaque lager_msg() :: logger:log_event().
 -export_type([lager_msg/0]).
 
@@ -76,6 +86,7 @@ severity_as_int(#{level := Level}) ->
 metadata(#{meta := Meta}) ->
     maps:to_list(Meta).
 
--spec destinations(lager_msg()) -> list().
+-spec destinations(lager_msg()) -> no_return().
+-dialyzer({nowarn_function, destinations/1}).
 destinations(_Msg) ->
     error(nosup).

@@ -1,66 +1,69 @@
-REBAR3_URL=https://s3.amazonaws.com/rebar3/rebar3
+SHELL := bash
+.ONESHELL:
+.SHELLFLAGS := -euc
+.DELETE_ON_ERROR:
+MAKEFLAGS += --warn-undefined-variables
+MAKEFLAGS += --no-builtin-rules
 
-ifeq ($(wildcard rebar3),rebar3)
-	REBAR3 = $(CURDIR)/rebar3
-endif
+## General Rules
 
-ifdef RUNNING_ON_CI
-REBAR3 = ./rebar3
-else
-REBAR3 ?= $(shell test -e `which rebar3` 2>/dev/null && which rebar3 || echo "./rebar3")
-endif
+all: compile doc
+.PHONY: all
+.NOTPARALLEL: all
 
-ifeq ($(REBAR3),)
-	REBAR3 = $(CURDIR)/rebar3
-endif
+compile:
+	@rebar3 compile
+.PHONY: compile
 
-.PHONY: all build clean check dialyzer xref
-.PHONY: test cover
-.PHONY: console doc publish
+clean:
+	@rebar3 clean -a
+.PHONY: clean
 
-.NOTPARALLEL: check cover test
+check: xref find-unused-code lint dialyzer
+.NOTPARALLEL: check
+.PHONY: check
 
-all: build
+test: eunit ct
+.NOTPARALLEL: test
+.PHONY: test
 
-build: $(REBAR3)
-	@$(REBAR3) compile
+## Tests
 
-$(REBAR3):
-	wget $(REBAR3_URL) || curl -Lo rebar3 $(REBAR3_URL)
-	@chmod a+x rebar3
+ct:
+	@rebar3 ct
+.PHONY: ct
 
-clean: $(REBAR3)
-	@$(REBAR3) clean
+eunit:
+	@rebar3 eunit
+.PHONY: eunit
 
-check: dialyzer xref
+## Checks
 
-dialyzer: $(REBAR3)
-	@$(REBAR3) dialyzer
+dialyzer:
+	@rebar3 as test dialyzer
+.PHONY: dialyzer
 
-xref: $(REBAR3)
-	@$(REBAR3) xref
+xref:
+	@rebar3 as test xref
+.PHONY: xref
 
-test: $(REBAR3) cli
-	@$(REBAR3) ct
+lint:
+	@rebar3 as test lint
+.PHONY: lint
 
-cover: $(REBAR3) test
-	@$(REBAR3) cover
+find-unused-code:
+	@rebar3 as test hank
+.PHONY: lint
 
-console: export ERL_FLAGS =? +pc unicode
-console:
-	@$(REBAR3) as development shell --apps lager
+## Shell, docs and publication
 
-doc: $(REBAR3)
-	@$(REBAR3) edoc
+shell: export ERL_FLAGS = +pc unicode
+shell:
+	@rebar3 as test shell
 
-README.md: doc
-	# non-portable dirty hack follows (pandoc 2.1.1 used)
-	# gfm: "github-flavoured markdown"
-	@pandoc --from html --to gfm doc/overview-summary.html -o README.md
-	@tail -n +11 <"README.md"   >"README.md_"
-	@head -n -14 <"README.md_"  >"README.md"
-	@rm "README.md_"
+doc:
+	./support/scripts/generate_docs.sh
 
-publish: $(REBAR3)
-	@$(REBAR3) as publish hex publish
-	@$(REBAR3) as publish hex docs
+publish:
+publish: doc
+	@rebar3 hex publish

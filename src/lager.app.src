@@ -5,7 +5,8 @@
     {mod, {fake_lager_app, []}},
     {applications, [
         kernel,
-        stdlib
+        stdlib,
+        syntax_tools
     ]},
     {env,[]},
     {modules, []},

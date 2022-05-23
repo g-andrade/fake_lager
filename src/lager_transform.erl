@@ -20,6 +20,7 @@
 
 -module(lager_transform).
 
+-include_lib("stdlib/include/assert.hrl").
 -include("lager.hrl").
 
 %%-------------------------------------------------------------------
@@ -36,14 +37,16 @@
 
 -record(module_context, {
           name :: module(),
-          file :: string() | undefined
+          file :: string() | undefined,
+          sinks :: [atom(), ...]
          }).
 
 -record(function_context, {
           module :: module(),
           file :: string() | undefined,
           name :: atom(),
-          arity :: arity()
+          arity :: arity(),
+          sinks :: [atom(), ...]
          }).
 
 %%-------------------------------------------------------------------
@@ -53,29 +56,55 @@
 -spec parse_transform(term(), [tuple()]) -> term().
 parse_transform(AST, Options) ->
     _ = check_for_unsupported_options(Options),
+    ExtraSinks = proplists:get_value(lager_extra_sinks, Options, []),
+    Sinks = [lager | ExtraSinks],
 
     %write_terms("ast_before.txt", AST),
-    {attribute, _, module, Module} = lists:keyfind(module, 3, AST),
-    File =
-        case lists:keyfind(file, 3, AST) of
-            {attribute, _, file, DefinedFile} ->
-                DefinedFile;
-            false ->
-                undefined
-        end,
+    Module = get_module(AST),
+    File = get_file(AST),
 
-    Context = #module_context{ name = Module, file = File },
+    Context = #module_context{ name = Module, file = File, sinks = Sinks },
     MappedAST = [map_ast_statement(Statement, Context) || Statement <- AST],
     %write_terms("ast_after.txt", MappedAST),
     MappedAST.
+
+%%-------------------------------------------------------------------
+%% Internal Function Definitions - Metadata
+%%-------------------------------------------------------------------
+
+get_module(AST) ->
+    ModuleAttribute = lists:keyfind(module, 3, AST),
+    ?assertNotEqual(false, ModuleAttribute),
+
+    case erl_syntax_lib:analyze_module_attribute(ModuleAttribute) of
+        Module when is_atom(Module) ->
+            Module;
+        {Module, _Params} when is_atom(Module) ->
+            Module
+    end.
+
+get_file(AST) ->
+    case lists:keyfind(file, 3, AST) of
+        false ->
+            undefined;
+        FileAttribute ->
+            {[_|_] = File, _Line} = erl_syntax_lib:analyze_file_attribute(FileAttribute),
+            File
+    end.
 
 %%-------------------------------------------------------------------
 %% Internal Function Definitions - Tree Walking
 %%-------------------------------------------------------------------
 
 map_ast_statement({function, Anno, Name, Arity, Clauses}, Context) ->
-    #module_context{name = Module, file = File} = Context,
-    FunctionContext = #function_context{ module = Module, file = File, name = Name, arity = Arity },
+    #module_context{name = Module, file = File, sinks = Sinks} = Context,
+    FunctionContext = #function_context{
+        module = Module,
+        file = File,
+        name = Name,
+        arity = Arity,
+        sinks = Sinks
+    },
     MappedClauses = [walk_function_statements(Clause, FunctionContext) || Clause <- Clauses],
     {function, Anno, Name, Arity, MappedClauses};
 map_ast_statement(Statement, _Context) ->
@@ -89,7 +118,7 @@ walk_function_statements({call, Anno,
                          Context) ->
     Arity = length(Args),
     MappedArgs = walk_function_statements(Args, Context),
-    SinkModules = [lager],
+    SinkModules = Context#function_context.sinks,
     case lists:member(Module, SinkModules) andalso
          lists:member(Arity, [1,2,3]) andalso
          (lists:member(Function, ?LEVELS) orelse
@@ -275,9 +304,8 @@ check_for_unsupported_options(Options) ->
     lists:foreach(
       fun ({Key,_Value}) when Key =:= lager_truncation_size;
                               Key =:= lager_print_records_flag;
-                              Key =:= lager_extra_sinks;
                               Key =:= lager_function_transforms ->
-              io:format("Unsupported option: '~s'", [Key]),
+              io:format("[error] Unsupported option: '~s~n'", [Key]),
               exit(normal);
           (_) ->
               ok

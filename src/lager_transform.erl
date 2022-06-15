@@ -124,15 +124,15 @@ walk_function_statements({call, Anno,
          (lists:member(Function, ?LEVELS) orelse
           {true_but_unsafe, lists:keyfind(Function, 1, ?LEVELS_UNSAFE)})
     of
-        false ->
-            {call, Anno, InvocationClause, MappedArgs};
         true
           when Function =:= none -> % replace with `ok'
             {atom, RemoteAnno, ok};
         true ->
             transform_call(Anno, Function, MappedArgs, Context);
         {true_but_unsafe, {_,Level}} ->
-            transform_call(Anno, Level, MappedArgs, Context)
+            transform_call(Anno, Level, MappedArgs, Context);
+        _ ->
+            {call, Anno, InvocationClause, MappedArgs}
     end;
 walk_function_statements(Statement, Context) when is_tuple(Statement) ->
     % very lazy way of walking the whole thing without explicit patterning

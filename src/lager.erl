@@ -553,6 +553,18 @@ update_loglevel_config(_Sink) ->
 %%-------------------------------------------------------------------
 
 logger_metadata(MetadataList) ->
+    case metadata_map(MetadataList) of
+        #{module := Module, function := Function} = Metadata
+          when not is_map_key(mfa, Metadata) ->
+            Arity = maps:get(arity, Metadata, 0),
+            WithoutLagerSpecifics = maps:without([module, function, arity], Metadata),
+            maps:put(mfa, {Module, Function, Arity}, WithoutLagerSpecifics);
+
+        Metadata ->
+            Metadata
+    end.
+
+metadata_map(MetadataList) ->
     lists:foldl(
       fun({Key,Value}, Acc) when is_atom(Key) ->
               Acc#{ Key => Value };

@@ -22,7 +22,7 @@ jobs:
             '25.0', '25.1'
         ]
         rebar3_vsn: ['3.18', '3.19']
-        os: [ubuntu-latest]
+        os: ['ubuntu-20.04']
         exclude:
           # rebar 3.19
           - rebar3_vsn: '3.19'

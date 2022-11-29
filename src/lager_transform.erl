@@ -128,9 +128,9 @@ walk_function_statements({call, Anno,
           when Function =:= none -> % replace with `ok'
             {atom, RemoteAnno, ok};
         true ->
-            transform_call(Anno, Function, MappedArgs, Context);
+            transform_call(Anno, Function, MappedArgs, Module, Context);
         {true_but_unsafe, {_,Level}} ->
-            transform_call(Anno, Level, MappedArgs, Context);
+            transform_call(Anno, Level, MappedArgs, Module, Context);
         _ ->
             {call, Anno, InvocationClause, MappedArgs}
     end;
@@ -149,13 +149,13 @@ walk_function_statements(StatementPart, _Context) ->
 %% Internal Function Definitions - Transformation of Logging Calls
 %%-------------------------------------------------------------------
 
-transform_call(Anno, Level, Args, Context) ->
-    TransformedArgs = transform_call_args(Anno, Args, Context),
+transform_call(Anno, Level, Args, Module, Context) ->
+    TransformedArgs = transform_call_args(Anno, Args, Module, Context),
     NewInvocationClause = {remote, Anno, {atom,Anno,logger}, {atom,Anno,Level}},
     {call, Anno, NewInvocationClause, TransformedArgs}.
 
-transform_call_args(Anno, Args, Context) ->
-    Metadata = logging_call_metadata(Anno, Args, Context),
+transform_call_args(Anno, Args, Module, Context) ->
+    Metadata = logging_call_metadata(Anno, Args, Module, Context),
     case is_formatting_prepararion_presumably_expensive(Args) of
         false ->
             transform_call_args_with_immediate_formatting(Anno, Args, Metadata);
@@ -219,8 +219,8 @@ lazy_message_fun(Anno, Fmt, FmtArgs) ->
 %% Internal Function Definitions - Logging Call Metadata
 %%-------------------------------------------------------------------
 
-logging_call_metadata(Anno, Args, Context) ->
-    BaseMetadata = base_call_metadata(Anno, Context),
+logging_call_metadata(Anno, Args, Module, Context) ->
+    BaseMetadata = base_call_metadata(Anno, Module, Context),
     case Args of
         [_Fmt] ->
             BaseMetadata;
@@ -230,7 +230,7 @@ logging_call_metadata(Anno, Args, Context) ->
             extended_call_metadata(Anno, BaseMetadata, ExtraMetadataList)
     end.
 
-base_call_metadata(Anno, Context) ->
+base_call_metadata(Anno, Module, Context) ->
     Line = erl_anno:line(Anno),
     {map, Anno,
      [% mfa => {module(), atom(), arity()}
@@ -255,6 +255,15 @@ base_call_metadata(Anno, Context) ->
      ++ [{map_field_assoc, Anno,
           {atom, Anno, line},
           {integer, Anno, Line}}]
+
+     % lager_sink => atom()
+     ++ case Module of
+            lager -> [];
+            CustomSink ->
+                [{map_field_assoc, Anno,
+                  {atom, Anno, lager_sink},
+                  {atom, Anno, CustomSink}}]
+        end
     }.
 
 extended_call_metadata(Anno, BaseMetadata, ExtraMetadataList) ->

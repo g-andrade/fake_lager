@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 
+- name of custom lager sink to event metadata
 - OTP 25.1 to CI
 
 ## [0.3.0] - 2022-08-05

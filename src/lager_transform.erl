@@ -102,6 +102,7 @@ parse_transform(Ast, Options) ->
 -spec get_pr_context(Module) -> Context
     when Module :: module(),
          Context :: fake_lager_pr:context().
+%% @private
 get_pr_context(Module) ->
     Attributes = Module:module_info(attributes),
 

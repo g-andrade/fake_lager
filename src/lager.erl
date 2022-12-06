@@ -397,6 +397,7 @@ posix_error(_Error) ->
          PrettyRecordFields :: #{RecordFieldName => MaybePrettyValue},
          RecordFieldName :: atom(),
          MaybePrettyNonRecord :: term().
+%% @doc Pretty-prints records with known definitions as tagged maps
 pr(Value, Module) ->
     pr(Value, Module, _Opts = []).
 
@@ -412,6 +413,7 @@ pr(Value, Module) ->
          RecordFieldName :: atom(),
          MaybePrettyNonRecord :: term(),
          Opts :: [pr_opt()].
+%% @doc Pretty-prints records with known definitions as tagged maps
 pr(Value, Module, Opts) ->
     Compress = proplists:get_value(compress, Opts, ?DEFAULT_PR_COMPRESS),
 

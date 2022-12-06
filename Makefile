@@ -30,7 +30,7 @@ test: eunit ct
 ## Tests
 
 ct:
-	@rebar3 ct
+	@rebar3 do ct, cover
 .PHONY: ct
 
 eunit:

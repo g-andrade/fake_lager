@@ -12,11 +12,12 @@ It intends on easing transitions to `logger` on codebases for which a
 straightforward move away from `lager` is impractical or unattainable in
 the near future.
 
-Basic lager functionality is covered:
+The following lager functionality is covered:
 
 - distinct log levels
 - lazy evaluation of logging calls
 - process and message metadata
+- pretty printing of records (although done differently)
 
 Extra sinks:
 
@@ -28,7 +29,7 @@ as well as [filters](https://www.erlang.org/doc/apps/kernel/logger_chapter.html#
 
 Yet to achieve:
 
-- support for pretty printing of records and stacktraces
+- support for pretty printing of stacktraces
 
 Likely unattainable:
 

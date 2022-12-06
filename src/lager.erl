@@ -139,6 +139,12 @@
    ]).
 
 %%-------------------------------------------------------------------
+%% Macro Definitions
+%%-------------------------------------------------------------------
+
+-define(DEFAULT_PR_COMPRESS, false).
+
+%%-------------------------------------------------------------------
 %% Record and Type Definitions
 %%-------------------------------------------------------------------
 
@@ -147,6 +153,12 @@
 
 -type log_level_number() :: 0..7.
 -export_type([log_level_number/0]).
+
+-type pr_opt() :: boolean_opt(compress).
+-export_type([pr_opt/0]).
+
+-type boolean_opt(Name) :: Name | {Name, boolean()}.
+-export_type([boolean_opt/1]).
 
 %%-------------------------------------------------------------------
 %% API Function Definitions
@@ -374,25 +386,42 @@ md(_) ->
 posix_error(_Error) ->
     error(notsup).
 
--spec pr(term(), term()) -> no_return().
-%% @TODO
-%% @private
-pr(Record, Module) when is_tuple(Record), is_atom(element(1, Record)) ->
-    pr(Record, Module, []);
-pr(List, Module) when is_list(List) ->
-    pr(List, Module, []);
-pr(_Record, _) ->
-    error(notsup).
+-spec pr(Value, Module) -> MaybePrettyValue
+    when Value :: Record | [Record] | NonRecord,
+         Record :: tuple(),
+         NonRecord :: term(),
+         Module :: module(),
+         MaybePrettyValue :: PrettyRecord | [PrettyRecord] | MaybePrettyNonRecord,
+         PrettyRecord :: {RecordName, PrettyRecordFields},
+         RecordName :: atom(),
+         PrettyRecordFields :: #{RecordFieldName => MaybePrettyValue},
+         RecordFieldName :: atom(),
+         MaybePrettyNonRecord :: term().
+pr(Value, Module) ->
+    pr(Value, Module, _Opts = []).
 
--spec pr(term(), term(), term()) -> no_return().
-%% @TODO
-%% @private
-pr(Record, _Module, Options) when is_tuple(Record), is_atom(element(1, Record)), is_list(Options) ->
-    error(notsup);
-pr([_Head|_Tail], _Module, Options) when is_list(Options) ->
-    error(notsup);
-pr(_Record, _, _) ->
-    error(notsup).
+-spec pr(Value, Module, Opts) -> MaybePrettyValue
+    when Value :: Record | [Record] | NonRecord,
+         Record :: tuple(),
+         NonRecord :: term(),
+         Module :: module(),
+         MaybePrettyValue :: PrettyRecord | [PrettyRecord] | MaybePrettyNonRecord,
+         PrettyRecord :: {RecordName, PrettyRecordFields},
+         RecordName :: atom(),
+         PrettyRecordFields :: #{RecordFieldName => MaybePrettyValue},
+         RecordFieldName :: atom(),
+         MaybePrettyNonRecord :: term(),
+         Opts :: [pr_opt()].
+pr(Value, Module, Opts) ->
+    Compress = proplists:get_value(compress, Opts, ?DEFAULT_PR_COMPRESS),
+
+    try lager_transform:get_pr_context(Module) of
+        PrContext ->
+            fake_lager_pr:pr(Value, Compress, PrContext)
+    catch
+        throw:no_pr_context ->
+            Value
+    end.
 
 -spec pr_stacktrace(term()) -> no_return().
 %% @TODO

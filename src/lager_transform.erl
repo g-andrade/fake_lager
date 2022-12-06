@@ -32,13 +32,26 @@
 -ignore_xref([parse_transform/2]).
 
 %%-------------------------------------------------------------------
+%% Internal API Function Exports
+%%-------------------------------------------------------------------
+
+-export([get_pr_context/1]).
+
+%% ------------------------------------------------------------------
+%% Macro Definitions
+%% ------------------------------------------------------------------
+
+-define(pr_context_attribute_name, '___$fake_lager.pr_context').
+
+%%-------------------------------------------------------------------
 %% Record and Type Definitions
 %%-------------------------------------------------------------------
 
 -record(module_context, {
           name :: module(),
           file :: string() | undefined,
-          sinks :: [atom(), ...]
+          sinks :: [atom(), ...],
+          pr_context :: fake_lager_pr:context()
          }).
 
 -record(function_context, {
@@ -49,31 +62,62 @@
           sinks :: [atom(), ...]
          }).
 
+%% ------------------------------------------------------------------
+%% Static Check Tweaks
+%% ------------------------------------------------------------------
+
+-elvis([{elvis_style, macro_names, disable}]).
+
 %%-------------------------------------------------------------------
 %% API Function Definitions
 %%-------------------------------------------------------------------
 
 -spec parse_transform(term(), [tuple()]) -> term().
-parse_transform(AST, Options) ->
+parse_transform(Ast, Options) ->
     _ = check_for_unsupported_options(Options),
     ExtraSinks = proplists:get_value(lager_extra_sinks, Options, []),
     Sinks = [lager | ExtraSinks],
 
-    %write_terms("ast_before.txt", AST),
-    Module = get_module(AST),
-    File = get_file(AST),
+    %write_terms("ast_before.txt", Ast),
+    Module = get_module(Ast),
+    File = get_file(Ast),
 
-    Context = #module_context{ name = Module, file = File, sinks = Sinks },
-    MappedAST = [map_ast_statement(Statement, Context) || Statement <- AST],
-    %write_terms("ast_after.txt", MappedAST),
-    MappedAST.
+    InitialContext = #module_context{ name = Module, file = File, sinks = Sinks,
+                                      pr_context = fake_lager_pr:new_context() },
+    {MappedAst, FinalContext}
+        = lists:mapfoldl(fun mapfold_ast_statement/2,
+                         InitialContext, Ast),
+
+    AstWithRecordDefs
+        = insert_pr_context_attribute(MappedAst,
+                                       FinalContext#module_context.pr_context),
+
+    %write_terms("ast_after.txt", AstWithRecordDefs),
+    AstWithRecordDefs.
+
+%%-------------------------------------------------------------------
+%% Internal API Function Definitions
+%%-------------------------------------------------------------------
+
+-spec get_pr_context(Module) -> Context
+    when Module :: module(),
+         Context :: fake_lager_pr:context().
+get_pr_context(Module) ->
+    Attributes = Module:module_info(attributes),
+
+    case lists:keyfind(?pr_context_attribute_name, 1, Attributes) of
+        {?pr_context_attribute_name, [PrContext]} ->
+            PrContext;
+        false ->
+            throw(no_pr_context)
+    end.
 
 %%-------------------------------------------------------------------
 %% Internal Function Definitions - Metadata
 %%-------------------------------------------------------------------
 
-get_module(AST) ->
-    ModuleAttribute = lists:keyfind(module, 3, AST),
+get_module(Ast) ->
+    ModuleAttribute = lists:keyfind(module, 3, Ast),
     ?assertNotEqual(false, ModuleAttribute),
 
     case erl_syntax_lib:analyze_module_attribute(ModuleAttribute) of
@@ -83,8 +127,8 @@ get_module(AST) ->
             Module
     end.
 
-get_file(AST) ->
-    case lists:keyfind(file, 3, AST) of
+get_file(Ast) ->
+    case lists:keyfind(file, 3, Ast) of
         false ->
             undefined;
         FileAttribute ->
@@ -96,7 +140,7 @@ get_file(AST) ->
 %% Internal Function Definitions - Tree Walking
 %%-------------------------------------------------------------------
 
-map_ast_statement({function, Anno, Name, Arity, Clauses}, Context) ->
+mapfold_ast_statement({function, Anno, Name, Arity, Clauses}, Context) ->
     #module_context{name = Module, file = File, sinks = Sinks} = Context,
     FunctionContext = #function_context{
         module = Module,
@@ -106,9 +150,16 @@ map_ast_statement({function, Anno, Name, Arity, Clauses}, Context) ->
         sinks = Sinks
     },
     MappedClauses = [walk_function_statements(Clause, FunctionContext) || Clause <- Clauses],
-    {function, Anno, Name, Arity, MappedClauses};
-map_ast_statement(Statement, _Context) ->
-    Statement.
+    MappedStatement = {function, Anno, Name, Arity, MappedClauses},
+    {MappedStatement, Context};
+mapfold_ast_statement({attribute, _, record, {Name, Fields}} = Statement, Context) ->
+    #module_context{pr_context = PrContext} = Context,
+    FieldNames = record_field_names(Fields),
+    UpdatedPrContext = fake_lager_pr:save_record_def(Name, FieldNames, PrContext),
+    UpdatedContext = Context#module_context{pr_context = UpdatedPrContext},
+    {Statement, UpdatedContext};
+mapfold_ast_statement(Statement, Context) ->
+    {Statement, Context}.
 
 walk_function_statements({call, Anno,
                           {remote, RemoteAnno,
@@ -306,15 +357,47 @@ runtime_merged_extended_call_metadata(Anno, BaseMetadata, ExtraMetadataList) ->
      ]}.
 
 %%-------------------------------------------------------------------
+%% Internal Function Definitions - Pretty Printing of Records
+%%-------------------------------------------------------------------
+
+record_field_names(FieldsFromAst) ->
+    lists:map(fun record_field_name/1, FieldsFromAst).
+
+%% `record_field_name/1' copied from original `lager_transform',
+%% licensed under Apache 2.0
+record_field_name({record_field, _, {atom, _, FieldName}}) ->
+    FieldName;
+record_field_name({record_field, _, {atom, _, FieldName}, _Default}) ->
+    FieldName;
+record_field_name({typed_record_field, Field, _Type}) ->
+    record_field_name(Field).
+
+insert_pr_context_attribute([Attribute | Next], RecordDefs) ->
+    case Attribute of
+        {attribute, Line, module, _} = ModuleAttribute ->
+            [ModuleAttribute
+             , {attribute, Line, ?pr_context_attribute_name, [RecordDefs]}
+             | Next];
+        OtherAttribute ->
+            [OtherAttribute
+             | insert_pr_context_attribute(Next, RecordDefs)]
+    end;
+insert_pr_context_attribute([], _RecordDefs) ->
+    % There's no module attribute - let the compiler handle it rather than have us crash
+    [].
+
+%%-------------------------------------------------------------------
 %% Internal Function Definitions - Utiliities
 %%-------------------------------------------------------------------
 
 check_for_unsupported_options(Options) ->
     lists:foreach(
-      fun ({Key,_Value}) when Key =:= lager_truncation_size;
+      fun ({lager_print_records_flag, true}) ->
+              ok;
+          ({Key, Value}) when Key =:= lager_truncation_size;
                               Key =:= lager_print_records_flag;
                               Key =:= lager_function_transforms ->
-              io:format("[error] Unsupported option: '~s~n'", [Key]),
+              io:format("[error] Unsupported option: '~s~n'", [{Key, Value}]),
               exit(normal);
           (_) ->
               ok

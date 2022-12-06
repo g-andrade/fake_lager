@@ -9,7 +9,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 
-- support for pretty printing of records with `lager:pr/2` and `lager:pr/3'
+- support for pretty printing of records as tagged maps
+(with `lager:pr/2` and `lager:pr/3')
 
 ## [0.4.0] - 2022-11-29
 

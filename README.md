@@ -17,7 +17,7 @@ The following lager functionality is covered:
 - distinct log levels
 - lazy evaluation of logging calls
 - process and message metadata
-- pretty printing of records (although done differently)
+- pretty printing of records (as tagged maps)
 
 Extra sinks:
 

@@ -21,11 +21,13 @@ The following lager functionality is covered:
 
 Extra sinks:
 
-- messages sent to extra sinks will be sent to the default log;
-if you wish to send those messages to a separate log, you can
+- events sent to extra sinks will be sent to the default log;
+if you wish to send those events to a separate log, you can
 leverage
 [extra logger handlers](https://www.erlang.org/doc/apps/kernel/logger_chapter.html#example--add-a-handler-to-log-info-events-to-file)
-as well as [filters](https://www.erlang.org/doc/apps/kernel/logger_chapter.html#filters)
+as well as [filters](https://www.erlang.org/doc/apps/kernel/logger_chapter.html#filters) -
+the events will include a `lager_sink` field in their metadata
+set to the name of the sink.
 
 Yet to achieve:
 

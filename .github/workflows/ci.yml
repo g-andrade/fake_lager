@@ -9,6 +9,7 @@ on:
     branches:
       - master
       - develop
+  workflow_dispatch:
 jobs:
   ci:
     name: Run checks and tests over ${{matrix.otp_vsn}} and ${{matrix.os}}

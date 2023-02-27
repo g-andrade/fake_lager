@@ -324,7 +324,7 @@ base_call_metadata(Anno, Module, Context) ->
 extended_call_metadata(Anno, BaseMetadata, ExtraMetadataList) ->
     case transform_metadata_list_into_map_field_associations(ExtraMetadataList) of
         {true, ExtraMetadataAssociations} ->
-            {map, Anno, BaseMetadataAssociations} = BaseMetadata,
+            {map, _, BaseMetadataAssociations} = BaseMetadata,
             {map, Anno, BaseMetadataAssociations ++ ExtraMetadataAssociations};
         false ->
             runtime_merged_extended_call_metadata(Anno, BaseMetadata, ExtraMetadataList)

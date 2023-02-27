@@ -132,9 +132,9 @@ deep_data_structures_test(_Config) ->
         [{'#good_state', #{a := 1, b := undefined}},
          {'#good_state', #{b := 2}},
          {'#good_state', #{c := 3}},
-         #{{'#bad_state', #{}} 
+         #{{'#bad_state', #{}}
                 := {{'#good_state', #{a := 1}}},
-           xyz 
+           xyz
                 := [{'#good_state', #{c := 3}}
                     | {'#bad_state', #{}}]}
         ],

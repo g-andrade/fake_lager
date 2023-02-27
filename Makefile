@@ -21,7 +21,7 @@ clean:
 	@rebar3 clean -a
 .PHONY: clean
 
-check: xref dialyzer hank-dead-code-cleaner
+check: xref hank-dead-code-cleaner elvis-linter dialyzer
 .NOTPARALLEL: check
 .PHONY: check
 
@@ -41,10 +41,6 @@ eunit:
 
 ## Checks
 
-dialyzer:
-	@rebar3 as test dialyzer
-.PHONY: dialyzer
-
 xref:
 	@rebar3 as test xref
 .PHONY: xref
@@ -55,6 +51,15 @@ hank-dead-code-cleaner:
 	else \
 		echo >&2 "WARN: skipping rebar3_hank check"; \
 	fi
+.PHONY: hank-dead-code-cleaner
+
+elvis-linter:
+	@rebar3 lint
+.PHONY: elvis-linter
+
+dialyzer:
+	@rebar3 as test dialyzer
+.PHONY: dialyzer
 
 ## Shell, docs and publication
 

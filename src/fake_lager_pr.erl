@@ -114,7 +114,7 @@ pr_not_record(Map, Compress, Context)
 pr_not_record(Value, _Compress, _Context) ->
     Value.
 
-pr_list([Head|Tail], Compress, Context) ->
+pr_list([Head | Tail], Compress, Context) ->
     [pr(Head, Compress, Context)
      | pr_list(Tail, Compress, Context)];
 pr_list([], _Compress, _Context) ->

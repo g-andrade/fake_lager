@@ -10,7 +10,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 
 - OTP 25.2 to CI
-- unused code check with `rebar3_hank`
+- unused code check (Hank)
+- code linter (Elvis)
 
 ### Changed
 

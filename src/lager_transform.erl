@@ -66,7 +66,10 @@
 %% Static Check Tweaks
 %% ------------------------------------------------------------------
 
--elvis([{elvis_style, macro_names, disable}]).
+-elvis([
+    {elvis_style, macro_names, disable},
+    {elvis_style, no_throw, disable}
+]).
 
 %%-------------------------------------------------------------------
 %% API Function Definitions
@@ -104,7 +107,7 @@ parse_transform(Ast, Options) ->
          Context :: fake_lager_pr:context().
 %% @private
 get_pr_context(Module) ->
-    Attributes = Module:module_info(attributes),
+    Attributes = apply(Module, module_info, [attributes]),
 
     case lists:keyfind(?pr_context_attribute_name, 1, Attributes) of
         {?pr_context_attribute_name, [PrContext]} ->
@@ -133,7 +136,7 @@ get_file(Ast) ->
         false ->
             undefined;
         FileAttribute ->
-            {[_|_] = File, _Line} = erl_syntax_lib:analyze_file_attribute(FileAttribute),
+            {[_ | _] = File, _Line} = erl_syntax_lib:analyze_file_attribute(FileAttribute),
             File
     end.
 
@@ -172,7 +175,7 @@ walk_function_statements({call, Anno,
     MappedArgs = walk_function_statements(Args, Context),
     SinkModules = Context#function_context.sinks,
     case lists:member(Module, SinkModules) andalso
-         lists:member(Arity, [1,2,3]) andalso
+         lists:member(Arity, [1, 2, 3]) andalso
          (lists:member(Function, ?LEVELS) orelse
           {true_but_unsafe, lists:keyfind(Function, 1, ?LEVELS_UNSAFE)})
     of
@@ -181,7 +184,7 @@ walk_function_statements({call, Anno,
             {atom, RemoteAnno, ok};
         true ->
             transform_call(Anno, Function, MappedArgs, Module, Context);
-        {true_but_unsafe, {_,Level}} ->
+        {true_but_unsafe, {_, Level}} ->
             transform_call(Anno, Level, MappedArgs, Module, Context);
         _ ->
             {call, Anno, InvocationClause, MappedArgs}
@@ -203,7 +206,7 @@ walk_function_statements(StatementPart, _Context) ->
 
 transform_call(Anno, Level, Args, Module, Context) ->
     TransformedArgs = transform_call_args(Anno, Args, Module, Context),
-    NewInvocationClause = {remote, Anno, {atom,Anno,logger}, {atom,Anno,Level}},
+    NewInvocationClause = {remote, Anno, {atom, Anno, logger}, {atom, Anno, Level}},
     {call, Anno, NewInvocationClause, TransformedArgs}.
 
 transform_call_args(Anno, Args, Module, Context) ->
@@ -229,7 +232,7 @@ is_formatting_prepararion_presumably_expensive(Args) ->
 transform_call_args_with_immediate_formatting(Anno, Args, Metadata) ->
     case Args of
         [Fmt] ->
-            FmtArgs = {nil,Anno}, % empty list
+            FmtArgs = {nil, Anno}, % empty list
             [Fmt, FmtArgs, Metadata];
         [Fmt, FmtArgs] ->
             [Fmt, FmtArgs, Metadata];
@@ -240,7 +243,7 @@ transform_call_args_with_immediate_formatting(Anno, Args, Metadata) ->
 transform_call_args_with_lazy_formatting(Anno, Args, Metadata) ->
     case Args of
         [Fmt] ->
-            FmtArgs = {nil,Anno}, % empty list
+            FmtArgs = {nil, Anno}, % empty list
             {MsgFun, MsgArgs} = lazy_message_fun_and_args(Anno, Fmt, FmtArgs),
             [MsgFun, MsgArgs, Metadata];
         [Fmt, FmtArgs] ->
@@ -332,7 +335,7 @@ transform_metadata_list_into_map_field_associations(ExtraMetadataList) ->
 
 transform_metadata_list_into_map_field_associations_recur(Clause, Acc) ->
     case Clause of
-        {cons, ConsAnno, {tuple,_,[{atom,_,_}=KeyTerm,ValueTerm]}, NextClause} ->
+        {cons, ConsAnno, {tuple, _, [{atom, _, _}=KeyTerm, ValueTerm]}, NextClause} ->
             Assoc = {map_field_assoc, ConsAnno, KeyTerm, ValueTerm},
             UpdatedAcc = [Assoc | Acc],
             transform_metadata_list_into_map_field_associations_recur(NextClause, UpdatedAcc);
@@ -348,10 +351,11 @@ transform_metadata_list_into_map_field_associations_recur(Clause, Acc) ->
 runtime_merged_extended_call_metadata(Anno, BaseMetadata, ExtraMetadataList) ->
     % maps:merge(ExtraMetadata, BaseMetadata)
     {call, Anno,
-     {remote, Anno, {atom,Anno,maps}, {atom,Anno,merge}},
+     {remote, Anno, {atom, Anno, maps}, {atom, Anno, merge}},
 
      [% Map1 - maps:from_list(ExtraMetadataList)
-      {call, Anno, {remote, Anno, {atom,Anno,maps}, {atom,Anno,from_list}}, [ExtraMetadataList]},
+      {call, Anno, {remote, Anno, {atom, Anno, maps},
+                    {atom, Anno, from_list}}, [ExtraMetadataList]},
 
       % Map2 - BaseMetadata
       BaseMetadata
@@ -398,7 +402,7 @@ check_for_unsupported_options(Options) ->
           ({Key, Value}) when Key =:= lager_truncation_size;
                               Key =:= lager_print_records_flag;
                               Key =:= lager_function_transforms ->
-              io:format("[error] Unsupported option: '~s~n'", [{Key, Value}]),
+              error_logger:error_msg("[error] Unsupported option: '~s~n'", [{Key, Value}]),
               exit(normal);
           (_) ->
               ok
@@ -412,7 +416,8 @@ is_term_evaluation_presumably_expensive({call, _Anno, _InvocationClause, _Args})
 is_term_evaluation_presumably_expensive({'receive', _Anno, _Patterns}) ->
     % receive pattern
     true;
-is_term_evaluation_presumably_expensive({'receive', _Anno, _Patterns, _Timeout, _TimeoutHandlers}) ->
+is_term_evaluation_presumably_expensive({'receive', _Anno, _Patterns, _Timeout,
+                                         _TimeoutHandlers}) ->
     % receive pattern (with timeouts)
     true;
 is_term_evaluation_presumably_expensive({op, _Anno, _Pid, _Arg}) ->

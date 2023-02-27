@@ -142,6 +142,11 @@
 %% Static Check Tweaks
 %%-------------------------------------------------------------------
 
+-elvis([
+    {elvis_style, god_modules, disable},
+    {elvis_style, no_throw, disable}
+]).
+
 -hank([
     {unnecessary_function_arguments, [
         {clear_trace_by_destination, 1},
@@ -222,7 +227,7 @@ clear_trace_by_destination(_Id) ->
 
 -spec dispatch_log(Severity, MetadataList, Format, Args, TruncSize) -> ok
         when Severity :: log_level(),
-             MetadataList :: [{atom(),term()}],
+             MetadataList :: [{atom(), term()}],
              Format :: string(),
              Args :: list(),
              TruncSize :: non_neg_integer().
@@ -234,7 +239,7 @@ dispatch_log(Severity, MetadataList, Format, Args, TruncSize) ->
 -spec dispatch_log(Sink, Severity, MetadataList, Format, Args, TruncSize, Safety) -> ok | Error
         when Sink :: atom(),
              Severity :: log_level(),
-             MetadataList :: [{atom(),term()}],
+             MetadataList :: [{atom(), term()}],
              Format :: string(),
              Args :: list(),
              TruncSize :: non_neg_integer(),
@@ -250,25 +255,27 @@ dispatch_log(Sink, Severity, MetadataList, Format, Args, TruncSize, _Safety)
     do_log(Severity, MetadataList, Format, Args, TruncSize, SeverityAsInt,
            LevelThreshold, Traces, Sink, SinkPid).
 
--spec dispatch_log(Severity, Module, Function, Line, Pid, MetadataList, Format, Args, TruncSize) -> ok
+-spec dispatch_log(Severity, Module, Function, Line, Pid, MetadataList,
+                   Format, Args, TruncSize) -> ok
         when Severity :: log_level(),
              Module :: module(),
              Function :: atom(),
              Line :: pos_integer(),
              Pid :: pid(),
-             MetadataList :: [{atom(),term()}],
+             MetadataList :: [{atom(), term()}],
              Format :: string(),
              Args :: list(),
              TruncSize :: non_neg_integer().
 %% @doc Backwards compatible with beams compiled with lager `1.x'
 %% @deprecated
-dispatch_log(Severity, _Module, _Function, _Line, _Pid, MetadataList, Format, Args, TruncSize) ->
+dispatch_log(Severity, _Module, _Function, _Line, _Pid, MetadataList,
+             Format, Args, TruncSize) ->
     dispatch_log(Severity, MetadataList, Format, Args, TruncSize).
 
 -spec do_log(Severity, MetadataList, Format, Args, TruncSize, SeverityAsInt,
              LevelThreshold, TraceFilters, SinkPid) -> ok
         when Severity :: log_level(),
-             MetadataList :: [{atom(),term()}],
+             MetadataList :: [{atom(), term()}],
              Format :: string(),
              Args :: list(),
              TruncSize :: non_neg_integer(),
@@ -279,14 +286,15 @@ dispatch_log(Severity, _Module, _Function, _Line, _Pid, MetadataList, Format, Ar
 %% @doc Backwards compatible with beams compiled with lager `2.x'
 %% @private
 %% @deprecated
-do_log(Severity, MetadataList, Format, Args, TruncSize, SeverityAsInt, LevelThreshold, TraceFilters, SinkPid) ->
+do_log(Severity, MetadataList, Format, Args, TruncSize, SeverityAsInt,
+       LevelThreshold, TraceFilters, SinkPid) ->
     do_log(Severity, MetadataList, Format, Args, TruncSize, SeverityAsInt,
            LevelThreshold, TraceFilters, ?DEFAULT_SINK, SinkPid).
 
 -spec do_log(Severity, MetadataList, Format, Args, TruncSize, SeverityAsInt,
              LevelThreshold, TraceFilters, Sink, SinkPid) -> ok | Error
         when Severity :: log_level(),
-             MetadataList :: [{atom(),term()}],
+             MetadataList :: [{atom(), term()}],
              Format :: string(),
              Args :: list(),
              TruncSize :: non_neg_integer(),
@@ -307,7 +315,7 @@ do_log(Severity, MetadataList, Format, Args,
 -spec do_log_unsafe(Severity, MetadataList, Format, Args, TruncSize, SeverityAsInt,
                     LevelThreshold, TraceFilters, Sink, SinkPid) -> ok | Error
         when Severity :: log_level(),
-             MetadataList :: [{atom(),term()}],
+             MetadataList :: [{atom(), term()}],
              Format :: string(),
              Args :: list(),
              TruncSize :: non_neg_integer(),
@@ -359,12 +367,12 @@ list_all_sinks() ->
 -spec log(Level, Process | MetadataList, Message) -> ok
         when Level :: log_level(),
              Process :: pid() | atom(),
-             MetadataList :: [{atom(),term()}],
+             MetadataList :: [{atom(), term()}],
              Message :: string().
 %% @doc Manually log a message into lager without using the parse transform.
 log(Level, Process, Message)
   when is_pid(Process); is_atom(Process) ->
-    dispatch_log(Level, [{pid,Process}], Message, [], ?DEFAULT_TRUNCATION);
+    dispatch_log(Level, [{pid, Process}], Message, [], ?DEFAULT_TRUNCATION);
 log(Level, MetadataList, Message)
   when is_list(MetadataList) ->
     dispatch_log(Level, MetadataList, Message, [], ?DEFAULT_TRUNCATION).
@@ -372,13 +380,13 @@ log(Level, MetadataList, Message)
 -spec log(Level, Process | MetadataList, Message, Args) -> ok
         when Level :: log_level(),
              Process :: pid() | atom(),
-             MetadataList :: [{atom(),term()}],
+             MetadataList :: [{atom(), term()}],
              Message :: string(),
              Args :: list().
 %% @doc Manually log a message into lager without using the parse transform.
 log(Level, Process, Format, Args)
   when is_pid(Process); is_atom(Process) ->
-    dispatch_log(Level, [{pid,Process}], Format, Args, ?DEFAULT_TRUNCATION);
+    dispatch_log(Level, [{pid, Process}], Format, Args, ?DEFAULT_TRUNCATION);
 log(Level, MetadataList, Format, Args)
   when is_list(MetadataList) ->
     dispatch_log(Level, MetadataList, Format, Args, ?DEFAULT_TRUNCATION).
@@ -387,7 +395,7 @@ log(Level, MetadataList, Format, Args)
         when Sink :: atom(),
              Level :: log_level(),
              Process :: pid() | atom(),
-             MetadataList :: [{atom(),term()}],
+             MetadataList :: [{atom(), term()}],
              Message :: string(),
              Args :: list(),
              Error :: {error, Reason},
@@ -395,13 +403,13 @@ log(Level, MetadataList, Format, Args)
 %% @doc Manually log a message into lager without using the parse transform.
 log(Sink, Level, Pid, Format, Args)
   when is_pid(Pid); is_atom(Pid) ->
-    dispatch_log(Sink, Level, [{pid,Pid}], Format, Args, ?DEFAULT_TRUNCATION, safe);
+    dispatch_log(Sink, Level, [{pid, Pid}], Format, Args, ?DEFAULT_TRUNCATION, safe);
 log(Sink, Level, MetadataList, Format, Args) when is_list(MetadataList) ->
     dispatch_log(Sink, Level, MetadataList, Format, Args, ?DEFAULT_TRUNCATION, safe).
 
 -spec log_unsafe(Level, MetadataList, Message, Args) -> ok
         when Level :: log_level(),
-             MetadataList :: [{atom(),term()}],
+             MetadataList :: [{atom(), term()}],
              Message :: string(),
              Args :: list().
 log_unsafe(Level, MetadataList, Format, Args)
@@ -419,7 +427,7 @@ md() ->
 
 %% @doc Set lager metadata for current process.
 %% Will badarg if you don't supply a list of {key, value} tuples keyed by atoms.
--spec md([{atom(), any()},...]) -> ok.
+-spec md([{atom(), any()}, ...]) -> ok.
 md(MetadataList)
   when length(MetadataList) >= 0 ->
     Metadata = logger_metadata(MetadataList),
@@ -477,7 +485,7 @@ pr(Value, Module, Opts) ->
 pr_stacktrace(_Stacktrace) ->
     error(notsup).
 
--spec pr_stacktrace(term(), {atom(),term()}) -> no_return().
+-spec pr_stacktrace(term(), {atom(), term()}) -> no_return().
 %% @TODO
 %% @private
 pr_stacktrace(_Stacktrace, {_Class, _Reason}) ->
@@ -548,7 +556,7 @@ set_loglevel(_Handler, _Ident, _Level) ->
 set_loglevel(_Sink, _Handler, _Ident, _Level) ->
     error(notsup).
 
--spec start() -> ok | {error,{atom(),term()}}.
+-spec start() -> ok | {error, {atom(), term()}}.
 start() ->
     case application:ensure_all_started(lager) of
         {ok, _} -> ok;
@@ -560,7 +568,7 @@ start() ->
 status() ->
     error(notsup).
 
--spec stop_trace({term(),term(),term()}) -> no_return().
+-spec stop_trace({term(), term(), term()}) -> no_return().
 %% @private
 stop_trace({_Backend, _Filter, _Level}) ->
     error(notsup).
@@ -643,7 +651,7 @@ logger_metadata(MetadataList) ->
 
 metadata_map(MetadataList) ->
     lists:foldl(
-      fun({Key,Value}, Acc) when is_atom(Key) ->
+      fun({Key, Value}, Acc) when is_atom(Key) ->
               Acc#{ Key => Value };
          (_, _) ->
               error(badarg)
@@ -652,11 +660,12 @@ metadata_map(MetadataList) ->
 
 redirect_to_logger(Severity, MetadataList, Format, Args, Sink) ->
     % TODO other sinks?
-    if Severity =:= none ->
+    case Severity of
+        none ->
            ok;
-       Sink =:= ?DEFAULT_SINK ->
+        _ when Sink =:= ?DEFAULT_SINK ->
            Metadata = logger_metadata(MetadataList),
            logger:log(Severity, Format, Args, Metadata);
-       true ->
+       _ ->
            {error, {bad_sink, Sink}}
     end.

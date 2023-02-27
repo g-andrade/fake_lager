@@ -54,7 +54,11 @@ hank-dead-code-cleaner:
 .PHONY: hank-dead-code-cleaner
 
 elvis-linter:
-	@rebar3 lint
+	@if rebar3 plugins list | grep '^rebar3_lint\>' >/dev/null; then \
+		rebar3 lint; \
+	else \
+		echo >&2 "WARN: skipping rebar3_lint check"; \
+	fi
 .PHONY: elvis-linter
 
 dialyzer:

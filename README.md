@@ -36,5 +36,3 @@ Yet to achieve:
 Likely unattainable:
 
 - tracing
-
-**`fake_lager` is experimental** and might not behave as you expect it to.

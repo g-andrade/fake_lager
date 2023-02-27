@@ -48,19 +48,19 @@
 %%-------------------------------------------------------------------
 
 -record(module_context, {
-          name :: module(),
-          file :: string() | undefined,
-          sinks :: [atom(), ...],
-          pr_context :: fake_lager_pr:context()
-         }).
+    name :: module(),
+    file :: string() | undefined,
+    sinks :: [atom(), ...],
+    pr_context :: fake_lager_pr:context()
+}).
 
 -record(function_context, {
-          module :: module(),
-          file :: string() | undefined,
-          name :: atom(),
-          arity :: arity(),
-          sinks :: [atom(), ...]
-         }).
+    module :: module(),
+    file :: string() | undefined,
+    name :: atom(),
+    arity :: arity(),
+    sinks :: [atom(), ...]
+}).
 
 %% ------------------------------------------------------------------
 %% Static Check Tweaks

@@ -14,12 +14,12 @@ begin
 
     TakeOutElvis
         = fun (Config) ->
-            TakeOutProjPlugin(rebar3_lint)
+            TakeOutProjPlugin(rebar3_lint, Config)
           end,
 
     TakeOutHank
         = fun (Config) ->
-            TakeOutProjPlugin(rebar3_hank)
+            TakeOutProjPlugin(rebar3_hank, Config)
           end,
 
     TakeOutHankIfMaybeExprNotEnabledOnEnv

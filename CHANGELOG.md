@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - OTP 25.2 to CI
 
+### Changed
+
+- doc generation to `rebar3_ex_doc` plugin
+
 ## [0.5.0] - 2022-12-06
 
 ### Added

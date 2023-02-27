@@ -139,6 +139,52 @@
    ]).
 
 %%-------------------------------------------------------------------
+%% Static Check Tweaks
+%%-------------------------------------------------------------------
+
+-hank([
+    {unnecessary_function_arguments, [
+        {clear_trace_by_destination, 1},
+        {dispatch_log, 7},
+        {dispatch_log, 9},
+        {do_log, 10},
+        {do_log_unsafe, 10},
+        {get_loglevel, 1},
+        {get_loglevel, 2},
+        {get_loglevels, 1},
+        {install_trace, 2},
+        {install_trace, 3},
+        {posix_error, 1},
+        {pr_stacktrace, 1},
+        {pr_stacktrace, 2},
+        {remove_trace, 1},
+        {rotate_handler, 1},
+        {rotate_handler, 2},
+        {rotate_sink, 1},
+        {safe_format, 3},
+        {safe_format_chop, 3},
+        {set_loghwm, 2},
+        {set_loghwm, 3},
+        {set_loghwm, 4},
+        {set_loglevel, 2},
+        {set_loglevel, 3},
+        {set_loglevel, 4},
+        {stop_trace, 3},
+        {trace, 2},
+        {trace, 3},
+        {trace_console, 1},
+        {trace_console, 2},
+        {trace_file, 2},
+        {trace_file, 3},
+        {trace_file, 4},
+        {trace_func, 3},
+        {trace_state, 3},
+        {unsafe_format, 2},
+        {update_loglevel_config, 1}
+    ]}
+]).
+
+%%-------------------------------------------------------------------
 %% Macro Definitions
 %%-------------------------------------------------------------------
 

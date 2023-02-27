@@ -2,6 +2,10 @@
 
 -include("lager.hrl").
 
+%%-------------------------------------------------------------------
+%% Function Exports
+%%-------------------------------------------------------------------
+
 -export([new/4, new/5]).
 -export([message/1]).
 -export([timestamp/1]).
@@ -21,10 +25,34 @@
 -ignore_xref(severity_as_int/1).
 -ignore_xref(timestamp/1).
 
+%%-------------------------------------------------------------------
+%% Macro Definitions
+%%-------------------------------------------------------------------
+
+-define(MEGA, 1000000).
+
+%%-------------------------------------------------------------------
+%% Type Definitions
+%%-------------------------------------------------------------------
+
 -opaque lager_msg() :: logger:log_event().
 -export_type([lager_msg/0]).
 
--define(MEGA, 1000000).
+%%-------------------------------------------------------------------
+%% Static Check Tweaks
+%%-------------------------------------------------------------------
+
+-hank([
+    {unnecessary_function_arguments, [
+        {destinations, 1, 1},
+        {new, 4, 4},
+        {new, 5, 5}
+    ]}
+]).
+
+%%-------------------------------------------------------------------
+%% Function Definitions
+%%-------------------------------------------------------------------
 
 %% create with provided timestamp, handy for testing mostly
 -spec new(list(), erlang:timestamp(), lager:log_level(), [tuple()], list()) -> lager_msg().

@@ -28,12 +28,7 @@
 
 -export(
    [start/2,
-    stop/1,
-    config_change/3
-   ]).
-
--ignore_xref(
-   [config_change/3
+    stop/1
    ]).
 
 %%-------------------------------------------------------------------
@@ -46,8 +41,4 @@ start(_StartType, _StartArgs) ->
 
 -spec stop(term()) -> ok.
 stop(_State) ->
-    ok.
-
--spec config_change([{term(), term()}], [{term(), term()}], [term()]) -> ok.
-config_change(_Changed, _New, _Removed) ->
     ok.

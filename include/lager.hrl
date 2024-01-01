@@ -1,5 +1,5 @@
 %% Copyright (c) 2011-2012 Basho Technologies, Inc.  All Rights Reserved.
-%% Copyright (C) 2019-2023 Guilherme Andrade (modifications)
+%% Copyright (C) 2019-2024 Guilherme Andrade (modifications)
 %%
 %% This file is provided to you under the Apache License,
 %% Version 2.0 (the "License"); you may not use this file

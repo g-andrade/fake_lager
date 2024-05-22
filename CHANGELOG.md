@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - OTP 26.0 to CI
 - OTP 26.1 to CI
 - OTP 26.2 to CI
+- OTP 27.0 to CI
 
 ### Changed
 

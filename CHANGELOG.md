@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 
 - CI to use latest rebar3 version that's compatible with each covered OTP release
+- CI from Ubuntu 20.04 to 22.04
 
 ## [1.0.0] - 2023-02-27
 

@@ -2,7 +2,7 @@
 
 [![](https://img.shields.io/hexpm/v/fake_lager.svg?style=flat)](https://hex.pm/packages/fake_lager)
 [![](https://github.com/g-andrade/fake_lager/actions/workflows/ci.yml/badge.svg)](https://github.com/g-andrade/fake_lager/actions/workflows/ci.yml)
-[![Erlang Versions](https://img.shields.io/badge/Supported%20Erlang%2FOTP-22%20to%2027-blue)](https://www.erlang.org)
+[![Erlang Versions](https://img.shields.io/badge/Supported%20Erlang%2FOTP-24%20to%2027-blue)](https://www.erlang.org)
 
 `fake_lager` is a drop-in replacement for
 [`lager`](https://github.com/erlang-lager/lager/) that forwards logs to

@@ -76,5 +76,5 @@ doc-dry:
 .PHONY: doc-dry
 
 publish:
-publish: doc
+publish: doc-dry
 	@rebar3 hex publish

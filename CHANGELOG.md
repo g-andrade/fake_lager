@@ -10,21 +10,19 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 
 - OTP 25.3 to CI
-- OTP 26.0 to CI
-- OTP 26.1 to CI
 - OTP 26.2 to CI
-- OTP 27.0 to CI
-- OTP 27.1 to CI
-- OTP 27.2 to CI
 - OTP 27.3 to CI
-- OTP 28.0 to CI
-- OTP 28.1 to CI
+- OTP 28.4 to CI
 
 ### Changed
 
 - CI to use latest rebar3 version that's compatible with each covered OTP release
 - CI from Ubuntu 20.04 to 22.04
 - oldest OTP version supported from 22 to 24
+
+### Fixed
+
+- documentation links to source code
 
 ## [1.0.0] - 2023-02-27
 

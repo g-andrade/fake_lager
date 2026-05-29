@@ -80,12 +80,15 @@ normalize_msg({report, Report}, #{report_cb := Cb}) when is_function(Cb, 1) ->
 normalize_msg({report, Report}, #{report_cb := Cb}) when is_function(Cb, 2) ->
     Cb(Report, #{});
 normalize_msg({report, Report}, _Meta) ->
-    [io_lib:fwrite("~w=~w", [Key, Value])
-     || {Key, Value} <- maps:to_list(Report)];
+    [
+        io_lib:fwrite("~w=~w", [Key, Value])
+     || {Key, Value} <- maps:to_list(Report)
+    ];
 normalize_msg({string, String}, _Meta) ->
     String;
-normalize_msg({Format, Data}, _Meta)
-  when is_atom(Format); is_list(Format); is_binary(Format) ->
+normalize_msg({Format, Data}, _Meta) when
+    is_atom(Format); is_list(Format); is_binary(Format)
+->
     io_lib:fwrite(Format, Data).
 
 -spec timestamp(lager_msg()) -> erlang:timestamp().

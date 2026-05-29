@@ -85,15 +85,24 @@ parse_transform(Ast, Options) ->
     Module = get_module(Ast),
     File = get_file(Ast),
 
-    InitialContext = #module_context{ name = Module, file = File, sinks = Sinks,
-                                      pr_context = fake_lager_pr:new_context() },
-    {MappedAst, FinalContext}
-        = lists:mapfoldl(fun mapfold_ast_statement/2,
-                         InitialContext, Ast),
+    InitialContext = #module_context{
+        name = Module,
+        file = File,
+        sinks = Sinks,
+        pr_context = fake_lager_pr:new_context()
+    },
+    {MappedAst, FinalContext} =
+        lists:mapfoldl(
+            fun mapfold_ast_statement/2,
+            InitialContext,
+            Ast
+        ),
 
-    AstWithRecordDefs
-        = insert_pr_context_attribute(MappedAst,
-                                       FinalContext#module_context.pr_context),
+    AstWithRecordDefs =
+        insert_pr_context_attribute(
+            MappedAst,
+            FinalContext#module_context.pr_context
+        ),
 
     %write_terms("ast_after.txt", AstWithRecordDefs),
     AstWithRecordDefs.
@@ -102,9 +111,9 @@ parse_transform(Ast, Options) ->
 %% Internal API Function Definitions
 %%-------------------------------------------------------------------
 
--spec get_pr_context(Module) -> Context
-    when Module :: module(),
-         Context :: fake_lager_pr:context().
+-spec get_pr_context(Module) -> Context when
+    Module :: module(),
+    Context :: fake_lager_pr:context().
 %% @private
 get_pr_context(Module) ->
     Attributes = apply(Module, module_info, [attributes]),
@@ -165,22 +174,26 @@ mapfold_ast_statement({attribute, _, record, {Name, Fields}} = Statement, Contex
 mapfold_ast_statement(Statement, Context) ->
     {Statement, Context}.
 
-walk_function_statements({call, Anno,
-                          {remote, RemoteAnno,
-                           {atom, _ModuleAnno, Module},
-                           {atom, _FunctionAnno, Function}} = InvocationClause,
-                          Args},
-                         Context) ->
+walk_function_statements(
+    {call, Anno,
+        {remote, RemoteAnno, {atom, _ModuleAnno, Module}, {atom, _FunctionAnno, Function}} =
+            InvocationClause,
+        Args},
+    Context
+) ->
     Arity = length(Args),
     MappedArgs = walk_function_statements(Args, Context),
     SinkModules = Context#function_context.sinks,
-    case lists:member(Module, SinkModules) andalso
-         lists:member(Arity, [1, 2, 3]) andalso
-         (lists:member(Function, ?LEVELS) orelse
-          {true_but_unsafe, lists:keyfind(Function, 1, ?LEVELS_UNSAFE)})
+    case
+        lists:member(Module, SinkModules) andalso
+            lists:member(Arity, [1, 2, 3]) andalso
+            (lists:member(Function, ?LEVELS) orelse
+                {true_but_unsafe, lists:keyfind(Function, 1, ?LEVELS_UNSAFE)})
     of
-        true
-          when Function =:= none -> % replace with `ok'
+        true when
+            % replace with `ok'
+            Function =:= none
+        ->
             {atom, RemoteAnno, ok};
         true ->
             transform_call(Anno, Function, MappedArgs, Module, Context);
@@ -225,14 +238,15 @@ is_formatting_prepararion_presumably_expensive(Args) ->
         [_Fmt, _FmtArgs] ->
             is_term_evaluation_presumably_expensive(Args);
         [_, Fmt, FmtArgs] ->
-            is_term_evaluation_presumably_expensive(Fmt)
-            orelse is_term_evaluation_presumably_expensive(FmtArgs)
+            is_term_evaluation_presumably_expensive(Fmt) orelse
+                is_term_evaluation_presumably_expensive(FmtArgs)
     end.
 
 transform_call_args_with_immediate_formatting(Anno, Args, Metadata) ->
     case Args of
         [Fmt] ->
-            FmtArgs = {nil, Anno}, % empty list
+            % empty list
+            FmtArgs = {nil, Anno},
             [Fmt, FmtArgs, Metadata];
         [Fmt, FmtArgs] ->
             [Fmt, FmtArgs, Metadata];
@@ -243,7 +257,8 @@ transform_call_args_with_immediate_formatting(Anno, Args, Metadata) ->
 transform_call_args_with_lazy_formatting(Anno, Args, Metadata) ->
     case Args of
         [Fmt] ->
-            FmtArgs = {nil, Anno}, % empty list
+            % empty list
+            FmtArgs = {nil, Anno},
             {MsgFun, MsgArgs} = lazy_message_fun_and_args(Anno, Fmt, FmtArgs),
             [MsgFun, MsgArgs, Metadata];
         [Fmt, FmtArgs] ->
@@ -260,15 +275,17 @@ lazy_message_fun_and_args(Anno, Fmt, FmtArgs) ->
     {Fun, Args}.
 
 lazy_message_fun(Anno, Fmt, FmtArgs) ->
-    {'fun', Anno, % anonymous fun declaration
-     {clauses,
-      [{clause, Anno,
-        [{atom, Anno, no_args}],       % fun arguments pattern (`no_args')
-        [],                            % fun guards (none)
-        [{tuple, Anno, [Fmt, FmtArgs]} % fun body (`{Fmt, FmtArgs}')
-        ]}
-      ]}
-    }.
+    % anonymous fun declaration
+    {'fun', Anno,
+        {clauses, [
+            {clause, Anno,
+                % fun arguments pattern (`no_args')
+                [{atom, Anno, no_args}],
+                % fun guards (none)
+                [],
+                % fun body (`{Fmt, FmtArgs}')
+                [{tuple, Anno, [Fmt, FmtArgs]}]}
+        ]}}.
 
 %%-------------------------------------------------------------------
 %% Internal Function Definitions - Logging Call Metadata
@@ -288,38 +305,29 @@ logging_call_metadata(Anno, Args, Module, Context) ->
 base_call_metadata(Anno, Module, Context) ->
     Line = erl_anno:line(Anno),
     {map, Anno,
-     [% mfa => {module(), atom(), arity()}
-      {map_field_assoc, Anno,
-       {atom, Anno, mfa},
-       {tuple, Anno,
-        [{atom, Anno, Context#function_context.module},
-         {atom, Anno, Context#function_context.name},
-         {integer, Anno, Context#function_context.arity}
-        ]}}]
-
-     % file => string()
-     ++ case Context#function_context.file of
-            undefined -> [];
-            File ->
-                [{map_field_assoc, Anno,
-                  {atom, Anno, file},
-                  {string, Anno, File}}]
-        end
-
-     % line => integer()
-     ++ [{map_field_assoc, Anno,
-          {atom, Anno, line},
-          {integer, Anno, Line}}]
-
-     % lager_sink => atom()
-     ++ case Module of
-            lager -> [];
-            CustomSink ->
-                [{map_field_assoc, Anno,
-                  {atom, Anno, lager_sink},
-                  {atom, Anno, CustomSink}}]
-        end
-    }.
+        % mfa => {module(), atom(), arity()}
+        [
+            {map_field_assoc, Anno, {atom, Anno, mfa},
+                {tuple, Anno, [
+                    {atom, Anno, Context#function_context.module},
+                    {atom, Anno, Context#function_context.name},
+                    {integer, Anno, Context#function_context.arity}
+                ]}}
+        ] ++
+            % file => string()
+            case Context#function_context.file of
+                undefined -> [];
+                File -> [{map_field_assoc, Anno, {atom, Anno, file}, {string, Anno, File}}]
+            end ++
+            % line => integer()
+            [{map_field_assoc, Anno, {atom, Anno, line}, {integer, Anno, Line}}] ++
+            % lager_sink => atom()
+            case Module of
+                lager ->
+                    [];
+                CustomSink ->
+                    [{map_field_assoc, Anno, {atom, Anno, lager_sink}, {atom, Anno, CustomSink}}]
+            end}.
 
 extended_call_metadata(Anno, BaseMetadata, ExtraMetadataList) ->
     case transform_metadata_list_into_map_field_associations(ExtraMetadataList) of
@@ -339,27 +347,26 @@ transform_metadata_list_into_map_field_associations_recur(Clause, Acc) ->
             Assoc = {map_field_assoc, ConsAnno, KeyTerm, ValueTerm},
             UpdatedAcc = [Assoc | Acc],
             transform_metadata_list_into_map_field_associations_recur(NextClause, UpdatedAcc);
-
         {nil, _} ->
             Associations = lists:reverse(Acc),
             {true, Associations};
-
         _ ->
             false
     end.
 
 runtime_merged_extended_call_metadata(Anno, BaseMetadata, ExtraMetadataList) ->
     % maps:merge(ExtraMetadata, BaseMetadata)
-    {call, Anno,
-     {remote, Anno, {atom, Anno, maps}, {atom, Anno, merge}},
+    {call, Anno, {remote, Anno, {atom, Anno, maps}, {atom, Anno, merge}},
 
-     [% Map1 - maps:from_list(ExtraMetadataList)
-      {call, Anno, {remote, Anno, {atom, Anno, maps},
-                    {atom, Anno, from_list}}, [ExtraMetadataList]},
+        % Map1 - maps:from_list(ExtraMetadataList)
+        [
+            {call, Anno, {remote, Anno, {atom, Anno, maps}, {atom, Anno, from_list}}, [
+                ExtraMetadataList
+            ]},
 
-      % Map2 - BaseMetadata
-      BaseMetadata
-     ]}.
+            % Map2 - BaseMetadata
+            BaseMetadata
+        ]}.
 
 %%-------------------------------------------------------------------
 %% Internal Function Definitions - Pretty Printing of Records
@@ -380,12 +387,16 @@ record_field_name({typed_record_field, Field, _Type}) ->
 insert_pr_context_attribute([Attribute | Next], RecordDefs) ->
     case Attribute of
         {attribute, Line, module, _} = ModuleAttribute ->
-            [ModuleAttribute
-             , {attribute, Line, ?pr_context_attribute_name, [RecordDefs]}
-             | Next];
+            [
+                ModuleAttribute,
+                {attribute, Line, ?pr_context_attribute_name, [RecordDefs]}
+                | Next
+            ];
         OtherAttribute ->
-            [OtherAttribute
-             | insert_pr_context_attribute(Next, RecordDefs)]
+            [
+                OtherAttribute
+                | insert_pr_context_attribute(Next, RecordDefs)
+            ]
     end;
 insert_pr_context_attribute([], _RecordDefs) ->
     % There's no module attribute - let the compiler handle it rather than have us crash
@@ -397,17 +408,21 @@ insert_pr_context_attribute([], _RecordDefs) ->
 
 check_for_unsupported_options(Options) ->
     lists:foreach(
-      fun ({lager_print_records_flag, true}) ->
-              ok;
-          ({Key, Value}) when Key =:= lager_truncation_size;
-                              Key =:= lager_print_records_flag;
-                              Key =:= lager_function_transforms ->
-              error_logger:error_msg("[error] Unsupported option: '~s~n'", [{Key, Value}]),
-              exit(normal);
-          (_) ->
-              ok
-      end,
-      Options).
+        fun
+            ({lager_print_records_flag, true}) ->
+                ok;
+            ({Key, Value}) when
+                Key =:= lager_truncation_size;
+                Key =:= lager_print_records_flag;
+                Key =:= lager_function_transforms
+            ->
+                error_logger:error_msg("[error] Unsupported option: '~s~n'", [{Key, Value}]),
+                exit(normal);
+            (_) ->
+                ok
+        end,
+        Options
+    ).
 
 % XXX: should binary construction be considered expensive?
 is_term_evaluation_presumably_expensive({call, _Anno, _InvocationClause, _Args}) ->
@@ -416,8 +431,7 @@ is_term_evaluation_presumably_expensive({call, _Anno, _InvocationClause, _Args})
 is_term_evaluation_presumably_expensive({'receive', _Anno, _Patterns}) ->
     % receive pattern
     true;
-is_term_evaluation_presumably_expensive({'receive', _Anno, _Patterns, _Timeout,
-                                         _TimeoutHandlers}) ->
+is_term_evaluation_presumably_expensive({'receive', _Anno, _Patterns, _Timeout, _TimeoutHandlers}) ->
     % receive pattern (with timeouts)
     true;
 is_term_evaluation_presumably_expensive({op, _Anno, _Pid, _Arg}) ->

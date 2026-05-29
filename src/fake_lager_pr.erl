@@ -25,9 +25,11 @@
 %% API Function Exports
 %% ------------------------------------------------------------------
 
--export([new_context/0,
-         save_record_def/3,
-         pr/3]).
+-export([
+    new_context/0,
+    save_record_def/3,
+    pr/3
+]).
 
 -define(context, 'fake_lager_pr.context').
 
@@ -71,11 +73,11 @@ save_record_def(Name, FieldNames, #?context{record_defs = RecordDefs} = Context)
     UpdatedRecordDefs = maps:put(DefKey, RecordDef, RecordDefs),
     Context#?context{record_defs = UpdatedRecordDefs}.
 
--spec pr(Value, Compress, Context) -> MaybePrettyValue
-    when Value :: term(),
-         Compress :: boolean(),
-         Context :: context(),
-         MaybePrettyValue :: term().
+-spec pr(Value, Compress, Context) -> MaybePrettyValue when
+    Value :: term(),
+    Compress :: boolean(),
+    Context :: context(),
+    MaybePrettyValue :: term().
 pr(MaybeRecord, Compress, Context) ->
     try element(1, MaybeRecord) of
         RecordName ->
@@ -96,27 +98,33 @@ pr(MaybeRecord, Compress, Context) ->
 new_record_def(RecordDef) ->
     RecordDef.
 
-pr_not_record(List, Compress, Context)
-  when is_list(List) ->
+pr_not_record(List, Compress, Context) when
+    is_list(List)
+->
     pr_list(List, Compress, Context);
-pr_not_record(Tuple, Compress, Context)
-  when is_tuple(Tuple) ->
+pr_not_record(Tuple, Compress, Context) when
+    is_tuple(Tuple)
+->
     List = tuple_to_list(Tuple),
     MappedList = pr_list(List, Compress, Context),
     list_to_tuple(MappedList);
-pr_not_record(Map, Compress, Context)
-  when is_map(Map) ->
+pr_not_record(Map, Compress, Context) when
+    is_map(Map)
+->
     List = maps:to_list(Map),
-    MappedList = [{pr(Key, Compress, Context),
-                   pr(Value, Compress, Context)}
-                  || {Key, Value} <- List],
+    MappedList = [
+        {pr(Key, Compress, Context), pr(Value, Compress, Context)}
+     || {Key, Value} <- List
+    ],
     maps:from_list(MappedList);
 pr_not_record(Value, _Compress, _Context) ->
     Value.
 
 pr_list([Head | Tail], Compress, Context) ->
-    [pr(Head, Compress, Context)
-     | pr_list(Tail, Compress, Context)];
+    [
+        pr(Head, Compress, Context)
+        | pr_list(Tail, Compress, Context)
+    ];
 pr_list([], _Compress, _Context) ->
     [];
 pr_list(ImproperListTail, Compress, Context) ->

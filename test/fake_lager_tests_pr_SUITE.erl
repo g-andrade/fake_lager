@@ -31,24 +31,28 @@
 %% ct_suite Function Exports
 %% ------------------------------------------------------------------
 
--export([all/0,
-         groups/0,
-         init_per_suite/1,
-         end_per_suite/1,
-         init_per_group/2,
-         end_per_group/2,
-         init_per_testcase/2,
-         end_per_testcase/2]).
+-export([
+    all/0,
+    groups/0,
+    init_per_suite/1,
+    end_per_suite/1,
+    init_per_group/2,
+    end_per_group/2,
+    init_per_testcase/2,
+    end_per_testcase/2
+]).
 
 %% ------------------------------------------------------------------
 %% Test Case Function Exports
 %% ------------------------------------------------------------------
 
--export([superficial_record_test/1,
-         deep_record_test/1,
-         deep_data_structures_test/1,
-         dont_compress_test/1,
-         compress_test/1]).
+-export([
+    superficial_record_test/1,
+    deep_record_test/1,
+    deep_data_structures_test/1,
+    dont_compress_test/1,
+    compress_test/1
+]).
 
 %% ------------------------------------------------------------------
 %% Record Definitions
@@ -66,15 +70,19 @@ all() ->
     [{group, GroupName} || {GroupName, _Options, _TestCases} <- groups()].
 
 groups() ->
-    [{_Name = tests,
-      _Opts = [parallel],
-      _TestCases = [
-        superficial_record_test,
-        deep_record_test,
-        deep_data_structures_test,
-        dont_compress_test,
-        compress_test
-    ]}].
+    [
+        {
+            _Name = tests,
+            _Opts = [parallel],
+            _TestCases = [
+                superficial_record_test,
+                deep_record_test,
+                deep_data_structures_test,
+                dont_compress_test,
+                compress_test
+            ]
+        }
+    ].
 
 init_per_suite(Config) ->
     Config.
@@ -107,7 +115,8 @@ superficial_record_test(_Config) ->
             c => z,
             d => 3.14
         }},
-        lager:pr(Record, ?MODULE)).
+        lager:pr(Record, ?MODULE)
+    ).
 
 deep_record_test(_Config) ->
     DeepRecord = #'Ugly.State'{zzz = yyy},
@@ -119,7 +128,8 @@ deep_record_test(_Config) ->
             c => {'#Ugly.State', #{zzz => yyy}},
             d => "€€"
         }},
-        lager:pr(Record, ?MODULE)).
+        lager:pr(Record, ?MODULE)
+    ).
 
 deep_data_structures_test(_Config) ->
     A = #good_state{a = 1},
@@ -129,16 +139,22 @@ deep_data_structures_test(_Config) ->
     Deep = [A, B, C, #{D => {A}, xyz => improper_list(C, D)}],
 
     ?assertMatch(
-        [{'#good_state', #{a := 1, b := undefined}},
-         {'#good_state', #{b := 2}},
-         {'#good_state', #{c := 3}},
-         #{{'#bad_state', #{}}
-                := {{'#good_state', #{a := 1}}},
-           xyz
-                := [{'#good_state', #{c := 3}}
-                    | {'#bad_state', #{}}]}
+        [
+            {'#good_state', #{a := 1, b := undefined}},
+            {'#good_state', #{b := 2}},
+            {'#good_state', #{c := 3}},
+            #{
+                {'#bad_state', #{}} :=
+                    {{'#good_state', #{a := 1}}},
+                xyz :=
+                    [
+                        {'#good_state', #{c := 3}}
+                        | {'#bad_state', #{}}
+                    ]
+            }
         ],
-        lager:pr(Deep, ?MODULE)).
+        lager:pr(Deep, ?MODULE)
+    ).
 
 dont_compress_test(_Config) ->
     A = #good_state{a = 1},
@@ -146,25 +162,28 @@ dont_compress_test(_Config) ->
     C = #good_state{c = 3},
 
     ?assertEqual(
-        [{'#good_state', #{
-            a => 1,
-            b => undefined,
-            c => undefined,
-            d => undefined
-         }},
-         {'#good_state', #{
-            a => undefined,
-            b => 2,
-            c => undefined,
-            d => undefined
-         }},
-         {'#good_state', #{
-            a => undefined,
-            b => undefined,
-            c => 3,
-            d => undefined
-         }}],
-        lager:pr([A, B, C], ?MODULE, [{compress, false}])).
+        [
+            {'#good_state', #{
+                a => 1,
+                b => undefined,
+                c => undefined,
+                d => undefined
+            }},
+            {'#good_state', #{
+                a => undefined,
+                b => 2,
+                c => undefined,
+                d => undefined
+            }},
+            {'#good_state', #{
+                a => undefined,
+                b => undefined,
+                c => 3,
+                d => undefined
+            }}
+        ],
+        lager:pr([A, B, C], ?MODULE, [{compress, false}])
+    ).
 
 compress_test(_Config) ->
     A = #good_state{a = 1},
@@ -172,16 +191,19 @@ compress_test(_Config) ->
     C = #good_state{c = 3},
 
     ?assertEqual(
-        [{'#good_state', #{
-            a => 1
-         }},
-         {'#good_state', #{
-            b => 2
-         }},
-         {'#good_state', #{
-            c => 3
-         }}],
-        lager:pr([A, B, C], ?MODULE, [compress])).
+        [
+            {'#good_state', #{
+                a => 1
+            }},
+            {'#good_state', #{
+                b => 2
+            }},
+            {'#good_state', #{
+                c => 3
+            }}
+        ],
+        lager:pr([A, B, C], ?MODULE, [compress])
+    ).
 
 %% ------------------------------------------------------------------
 %% Internal Function Definitions

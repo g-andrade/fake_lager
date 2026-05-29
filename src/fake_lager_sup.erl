@@ -55,9 +55,10 @@ start_link() ->
 -spec init([]) -> {ok, {supervisor:sup_flags(), []}}.
 init([]) ->
     SupFlags =
-        #{ strategy => one_for_one,
-           intensity => 10,
-           period => 1
-         },
+        #{
+            strategy => one_for_one,
+            intensity => 10,
+            period => 1
+        },
     ChildSpecs = [],
     {ok, {SupFlags, ChildSpecs}}.

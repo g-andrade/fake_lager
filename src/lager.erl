@@ -26,114 +26,119 @@
 %% API Function Exports
 %%-------------------------------------------------------------------
 
--export([clear_all_traces/0,
-         clear_trace_by_destination/1,
-         dispatch_log/5,
-         dispatch_log/7,
-         dispatch_log/9,
-         do_log/10,
-         do_log/9,
-         do_log_unsafe/10,
-         get_loglevel/1,
-         get_loglevel/2,
-         get_loglevels/1,
-         install_trace/2,
-         install_trace/3,
-         list_all_sinks/0,
-         log/3,
-         log/4,
-         log/5,
-         log_unsafe/4,
-         md/0,
-         md/1,
-         posix_error/1,
-         pr/2,
-         pr/3,
-         pr_stacktrace/1,
-         pr_stacktrace/2,
-         remove_trace/1,
-         rotate_all/0,
-         rotate_handler/1,
-         rotate_handler/2,
-         rotate_sink/1,
-         safe_format/3,
-         safe_format_chop/3,
-         set_loghwm/2,
-         set_loghwm/3,
-         set_loghwm/4,
-         set_loglevel/2,
-         set_loglevel/3,
-         set_loglevel/4,
-         start/0,
-         status/0,
-         stop_trace/1,
-         stop_trace/3,
-         trace/2,
-         trace/3,
-         trace_console/1,
-         trace_console/2,
-         trace_file/2,
-         trace_file/3,
-         trace_file/4,
-         trace_func/3,
-         trace_state/3,
-         unsafe_format/2,
-         update_loglevel_config/1]).
+-export([
+    clear_all_traces/0,
+    clear_trace_by_destination/1,
+    dispatch_log/5,
+    dispatch_log/7,
+    dispatch_log/9,
+    do_log/10,
+    do_log/9,
+    do_log_unsafe/10,
+    get_loglevel/1,
+    get_loglevel/2,
+    get_loglevels/1,
+    install_trace/2,
+    install_trace/3,
+    list_all_sinks/0,
+    log/3,
+    log/4,
+    log/5,
+    log_unsafe/4,
+    md/0,
+    md/1,
+    posix_error/1,
+    pr/2,
+    pr/3,
+    pr_stacktrace/1,
+    pr_stacktrace/2,
+    remove_trace/1,
+    rotate_all/0,
+    rotate_handler/1,
+    rotate_handler/2,
+    rotate_sink/1,
+    safe_format/3,
+    safe_format_chop/3,
+    set_loghwm/2,
+    set_loghwm/3,
+    set_loghwm/4,
+    set_loglevel/2,
+    set_loglevel/3,
+    set_loglevel/4,
+    start/0,
+    status/0,
+    stop_trace/1,
+    stop_trace/3,
+    trace/2,
+    trace/3,
+    trace_console/1,
+    trace_console/2,
+    trace_file/2,
+    trace_file/3,
+    trace_file/4,
+    trace_func/3,
+    trace_state/3,
+    unsafe_format/2,
+    update_loglevel_config/1
+]).
 
 -ignore_xref(
-        [clear_all_traces/0,
-         clear_trace_by_destination/1,
-         dispatch_log/5,
-         dispatch_log/7,
-         dispatch_log/9,
-         do_log/9,
-         do_log/10,
-         do_log_unsafe/10,
-         get_loglevel/1,
-         get_loglevel/2,
-         get_loglevels/1,
-         install_trace/2,
-         install_trace/3,
-         list_all_sinks/0,
-         log/3,
-         log/4,
-         log/5,
-         log_unsafe/4,
-         md/0,
-         md/1,
-         posix_error/1,
-         pr/2,
-         pr/3,
-         pr_stacktrace/1,
-         pr_stacktrace/2,
-         remove_trace/1,
-         rotate_all/0,
-         rotate_handler/1,
-         rotate_handler/2,
-         rotate_sink/1,
-         safe_format/3,
-         safe_format_chop/3,
-         set_loghwm/2,
-         set_loghwm/3,
-         set_loghwm/4,
-         set_loglevel/2,
-         set_loglevel/3,
-         set_loglevel/4,
-         start/0,
-         status/0,
-         stop_trace/1,
-         stop_trace/3,
-         trace/2,
-         trace/3,
-         trace_console/1,
-         trace_console/2,
-         trace_file/2,
-         trace_file/3,
-         trace_file/4,
-         trace_func/3,
-         trace_state/3,
-         unsafe_format/2,
-         update_loglevel_config/1]).
+    [
+        clear_all_traces/0,
+        clear_trace_by_destination/1,
+        dispatch_log/5,
+        dispatch_log/7,
+        dispatch_log/9,
+        do_log/9,
+        do_log/10,
+        do_log_unsafe/10,
+        get_loglevel/1,
+        get_loglevel/2,
+        get_loglevels/1,
+        install_trace/2,
+        install_trace/3,
+        list_all_sinks/0,
+        log/3,
+        log/4,
+        log/5,
+        log_unsafe/4,
+        md/0,
+        md/1,
+        posix_error/1,
+        pr/2,
+        pr/3,
+        pr_stacktrace/1,
+        pr_stacktrace/2,
+        remove_trace/1,
+        rotate_all/0,
+        rotate_handler/1,
+        rotate_handler/2,
+        rotate_sink/1,
+        safe_format/3,
+        safe_format_chop/3,
+        set_loghwm/2,
+        set_loghwm/3,
+        set_loghwm/4,
+        set_loglevel/2,
+        set_loglevel/3,
+        set_loglevel/4,
+        start/0,
+        status/0,
+        stop_trace/1,
+        stop_trace/3,
+        trace/2,
+        trace/3,
+        trace_console/1,
+        trace_console/2,
+        trace_file/2,
+        trace_file/3,
+        trace_file/4,
+        trace_func/3,
+        trace_state/3,
+        unsafe_format/2,
+        update_loglevel_config/1
+    ]
+).
 
 %%-------------------------------------------------------------------
 %% Static Check Tweaks
@@ -226,113 +231,210 @@ clear_all_traces() ->
 clear_trace_by_destination(_Id) ->
     error(notsup).
 
--spec dispatch_log(Severity, MetadataList, Format, Args, TruncSize) -> ok
-        when Severity :: log_level(),
-             MetadataList :: [{atom(), term()}],
-             Format :: string(),
-             Args :: list(),
-             TruncSize :: non_neg_integer().
+-spec dispatch_log(Severity, MetadataList, Format, Args, TruncSize) -> ok when
+    Severity :: log_level(),
+    MetadataList :: [{atom(), term()}],
+    Format :: string(),
+    Args :: list(),
+    TruncSize :: non_neg_integer().
 %% @doc Backwards compatible with beams compiled with lager `2.x'
 %% @deprecated
 dispatch_log(Severity, MetadataList, Format, Args, TruncSize) ->
     dispatch_log(?DEFAULT_SINK, Severity, MetadataList, Format, Args, TruncSize, safe).
 
--spec dispatch_log(Sink, Severity, MetadataList, Format, Args, TruncSize, Safety) -> ok | Error
-        when Sink :: atom(),
-             Severity :: log_level(),
-             MetadataList :: [{atom(), term()}],
-             Format :: string(),
-             Args :: list(),
-             TruncSize :: non_neg_integer(),
-             Safety :: safe | unsafe,
-             Error :: {error, Reason},
-             Reason :: {bad_sink, Sink}.
-dispatch_log(Sink, Severity, MetadataList, Format, Args, TruncSize, _Safety)
-  when is_atom(Severity) ->
+-spec dispatch_log(Sink, Severity, MetadataList, Format, Args, TruncSize, Safety) -> ok | Error when
+    Sink :: atom(),
+    Severity :: log_level(),
+    MetadataList :: [{atom(), term()}],
+    Format :: string(),
+    Args :: list(),
+    TruncSize :: non_neg_integer(),
+    Safety :: safe | unsafe,
+    Error :: {error, Reason},
+    Reason :: {bad_sink, Sink}.
+dispatch_log(Sink, Severity, MetadataList, Format, Args, TruncSize, _Safety) when
+    is_atom(Severity)
+->
     SeverityAsInt = -1,
     LevelThreshold = -1,
     Traces = [],
     SinkPid = whereis(Sink),
-    do_log(Severity, MetadataList, Format, Args, TruncSize, SeverityAsInt,
-           LevelThreshold, Traces, Sink, SinkPid).
+    do_log(
+        Severity,
+        MetadataList,
+        Format,
+        Args,
+        TruncSize,
+        SeverityAsInt,
+        LevelThreshold,
+        Traces,
+        Sink,
+        SinkPid
+    ).
 
--spec dispatch_log(Severity, Module, Function, Line, Pid, MetadataList,
-                   Format, Args, TruncSize) -> ok
-        when Severity :: log_level(),
-             Module :: module(),
-             Function :: atom(),
-             Line :: pos_integer(),
-             Pid :: pid(),
-             MetadataList :: [{atom(), term()}],
-             Format :: string(),
-             Args :: list(),
-             TruncSize :: non_neg_integer().
+-spec dispatch_log(
+    Severity,
+    Module,
+    Function,
+    Line,
+    Pid,
+    MetadataList,
+    Format,
+    Args,
+    TruncSize
+) -> ok when
+    Severity :: log_level(),
+    Module :: module(),
+    Function :: atom(),
+    Line :: pos_integer(),
+    Pid :: pid(),
+    MetadataList :: [{atom(), term()}],
+    Format :: string(),
+    Args :: list(),
+    TruncSize :: non_neg_integer().
 %% @doc Backwards compatible with beams compiled with lager `1.x'
 %% @deprecated
-dispatch_log(Severity, _Module, _Function, _Line, _Pid, MetadataList,
-             Format, Args, TruncSize) ->
+dispatch_log(
+    Severity,
+    _Module,
+    _Function,
+    _Line,
+    _Pid,
+    MetadataList,
+    Format,
+    Args,
+    TruncSize
+) ->
     dispatch_log(Severity, MetadataList, Format, Args, TruncSize).
 
--spec do_log(Severity, MetadataList, Format, Args, TruncSize, SeverityAsInt,
-             LevelThreshold, TraceFilters, SinkPid) -> ok
-        when Severity :: log_level(),
-             MetadataList :: [{atom(), term()}],
-             Format :: string(),
-             Args :: list(),
-             TruncSize :: non_neg_integer(),
-             SeverityAsInt :: integer(),
-             LevelThreshold :: integer(),
-             TraceFilters :: term(),
-             SinkPid :: pid().
+-spec do_log(
+    Severity,
+    MetadataList,
+    Format,
+    Args,
+    TruncSize,
+    SeverityAsInt,
+    LevelThreshold,
+    TraceFilters,
+    SinkPid
+) -> ok when
+    Severity :: log_level(),
+    MetadataList :: [{atom(), term()}],
+    Format :: string(),
+    Args :: list(),
+    TruncSize :: non_neg_integer(),
+    SeverityAsInt :: integer(),
+    LevelThreshold :: integer(),
+    TraceFilters :: term(),
+    SinkPid :: pid().
 %% @doc Backwards compatible with beams compiled with lager `2.x'
 %% @private
 %% @deprecated
-do_log(Severity, MetadataList, Format, Args, TruncSize, SeverityAsInt,
-       LevelThreshold, TraceFilters, SinkPid) ->
-    do_log(Severity, MetadataList, Format, Args, TruncSize, SeverityAsInt,
-           LevelThreshold, TraceFilters, ?DEFAULT_SINK, SinkPid).
+do_log(
+    Severity,
+    MetadataList,
+    Format,
+    Args,
+    TruncSize,
+    SeverityAsInt,
+    LevelThreshold,
+    TraceFilters,
+    SinkPid
+) ->
+    do_log(
+        Severity,
+        MetadataList,
+        Format,
+        Args,
+        TruncSize,
+        SeverityAsInt,
+        LevelThreshold,
+        TraceFilters,
+        ?DEFAULT_SINK,
+        SinkPid
+    ).
 
--spec do_log(Severity, MetadataList, Format, Args, TruncSize, SeverityAsInt,
-             LevelThreshold, TraceFilters, Sink, SinkPid) -> ok | Error
-        when Severity :: log_level(),
-             MetadataList :: [{atom(), term()}],
-             Format :: string(),
-             Args :: list(),
-             TruncSize :: non_neg_integer(),
-             SeverityAsInt :: integer(),
-             LevelThreshold :: integer(),
-             TraceFilters :: term(),
-             Sink :: atom(),
-             SinkPid :: pid(),
-             Error :: {error, Reason},
-             Reason :: {bad_sink, Sink}.
+-spec do_log(
+    Severity,
+    MetadataList,
+    Format,
+    Args,
+    TruncSize,
+    SeverityAsInt,
+    LevelThreshold,
+    TraceFilters,
+    Sink,
+    SinkPid
+) -> ok | Error when
+    Severity :: log_level(),
+    MetadataList :: [{atom(), term()}],
+    Format :: string(),
+    Args :: list(),
+    TruncSize :: non_neg_integer(),
+    SeverityAsInt :: integer(),
+    LevelThreshold :: integer(),
+    TraceFilters :: term(),
+    Sink :: atom(),
+    SinkPid :: pid(),
+    Error :: {error, Reason},
+    Reason :: {bad_sink, Sink}.
 %% @private Should only be called externally from code generated from the parse transform
-do_log(Severity, MetadataList, Format, Args,
-       _Size, _SeverityAsInt, _LevelThreshold, _TraceFilters,
-       Sink, _SinkPid)
-  when is_atom(Severity) ->
+do_log(
+    Severity,
+    MetadataList,
+    Format,
+    Args,
+    _Size,
+    _SeverityAsInt,
+    _LevelThreshold,
+    _TraceFilters,
+    Sink,
+    _SinkPid
+) when
+    is_atom(Severity)
+->
     redirect_to_logger(Severity, MetadataList, Format, Args, Sink).
 
--spec do_log_unsafe(Severity, MetadataList, Format, Args, TruncSize, SeverityAsInt,
-                    LevelThreshold, TraceFilters, Sink, SinkPid) -> ok | Error
-        when Severity :: log_level(),
-             MetadataList :: [{atom(), term()}],
-             Format :: string(),
-             Args :: list(),
-             TruncSize :: non_neg_integer(),
-             SeverityAsInt :: integer(),
-             LevelThreshold :: integer(),
-             TraceFilters :: term(),
-             Sink :: atom(),
-             SinkPid :: pid(),
-             Error :: {error, Reason},
-             Reason :: {bad_sink, Sink}.
+-spec do_log_unsafe(
+    Severity,
+    MetadataList,
+    Format,
+    Args,
+    TruncSize,
+    SeverityAsInt,
+    LevelThreshold,
+    TraceFilters,
+    Sink,
+    SinkPid
+) -> ok | Error when
+    Severity :: log_level(),
+    MetadataList :: [{atom(), term()}],
+    Format :: string(),
+    Args :: list(),
+    TruncSize :: non_neg_integer(),
+    SeverityAsInt :: integer(),
+    LevelThreshold :: integer(),
+    TraceFilters :: term(),
+    Sink :: atom(),
+    SinkPid :: pid(),
+    Error :: {error, Reason},
+    Reason :: {bad_sink, Sink}.
 %% @private Should only be called externally from code generated from the parse transform
 %% Specifically, it would be level ++ `_unsafe' as in `info_unsafe'.
-do_log_unsafe(Severity, MetadataList, Format, Args,
-              _Size, _SeverityAsInt, _LevelThreshold, _TraceFilters,
-              Sink, _SinkPid)
-  when is_atom(Severity) ->
+do_log_unsafe(
+    Severity,
+    MetadataList,
+    Format,
+    Args,
+    _Size,
+    _SeverityAsInt,
+    _LevelThreshold,
+    _TraceFilters,
+    Sink,
+    _SinkPid
+) when
+    is_atom(Severity)
+->
     redirect_to_logger(Severity, MetadataList, Format, Args, Sink).
 
 -spec get_loglevel(term()) -> no_return().
@@ -365,56 +467,62 @@ install_trace(_Pid, _Level, _Options) ->
 list_all_sinks() ->
     error(notsup).
 
--spec log(Level, Process | MetadataList, Message) -> ok
-        when Level :: log_level(),
-             Process :: pid() | atom(),
-             MetadataList :: [{atom(), term()}],
-             Message :: string().
+-spec log(Level, Process | MetadataList, Message) -> ok when
+    Level :: log_level(),
+    Process :: pid() | atom(),
+    MetadataList :: [{atom(), term()}],
+    Message :: string().
 %% @doc Manually log a message into lager without using the parse transform.
-log(Level, Process, Message)
-  when is_pid(Process); is_atom(Process) ->
+log(Level, Process, Message) when
+    is_pid(Process); is_atom(Process)
+->
     dispatch_log(Level, [{pid, Process}], Message, [], ?DEFAULT_TRUNCATION);
-log(Level, MetadataList, Message)
-  when is_list(MetadataList) ->
+log(Level, MetadataList, Message) when
+    is_list(MetadataList)
+->
     dispatch_log(Level, MetadataList, Message, [], ?DEFAULT_TRUNCATION).
 
--spec log(Level, Process | MetadataList, Message, Args) -> ok
-        when Level :: log_level(),
-             Process :: pid() | atom(),
-             MetadataList :: [{atom(), term()}],
-             Message :: string(),
-             Args :: list().
+-spec log(Level, Process | MetadataList, Message, Args) -> ok when
+    Level :: log_level(),
+    Process :: pid() | atom(),
+    MetadataList :: [{atom(), term()}],
+    Message :: string(),
+    Args :: list().
 %% @doc Manually log a message into lager without using the parse transform.
-log(Level, Process, Format, Args)
-  when is_pid(Process); is_atom(Process) ->
+log(Level, Process, Format, Args) when
+    is_pid(Process); is_atom(Process)
+->
     dispatch_log(Level, [{pid, Process}], Format, Args, ?DEFAULT_TRUNCATION);
-log(Level, MetadataList, Format, Args)
-  when is_list(MetadataList) ->
+log(Level, MetadataList, Format, Args) when
+    is_list(MetadataList)
+->
     dispatch_log(Level, MetadataList, Format, Args, ?DEFAULT_TRUNCATION).
 
--spec log(Sink, Level, Process | MetadataList, Message, Args) -> ok | Error
-        when Sink :: atom(),
-             Level :: log_level(),
-             Process :: pid() | atom(),
-             MetadataList :: [{atom(), term()}],
-             Message :: string(),
-             Args :: list(),
-             Error :: {error, Reason},
-             Reason :: {bad_sink, Sink}.
+-spec log(Sink, Level, Process | MetadataList, Message, Args) -> ok | Error when
+    Sink :: atom(),
+    Level :: log_level(),
+    Process :: pid() | atom(),
+    MetadataList :: [{atom(), term()}],
+    Message :: string(),
+    Args :: list(),
+    Error :: {error, Reason},
+    Reason :: {bad_sink, Sink}.
 %% @doc Manually log a message into lager without using the parse transform.
-log(Sink, Level, Pid, Format, Args)
-  when is_pid(Pid); is_atom(Pid) ->
+log(Sink, Level, Pid, Format, Args) when
+    is_pid(Pid); is_atom(Pid)
+->
     dispatch_log(Sink, Level, [{pid, Pid}], Format, Args, ?DEFAULT_TRUNCATION, safe);
 log(Sink, Level, MetadataList, Format, Args) when is_list(MetadataList) ->
     dispatch_log(Sink, Level, MetadataList, Format, Args, ?DEFAULT_TRUNCATION, safe).
 
--spec log_unsafe(Level, MetadataList, Message, Args) -> ok
-        when Level :: log_level(),
-             MetadataList :: [{atom(), term()}],
-             Message :: string(),
-             Args :: list().
-log_unsafe(Level, MetadataList, Format, Args)
-  when is_list(MetadataList) ->
+-spec log_unsafe(Level, MetadataList, Message, Args) -> ok when
+    Level :: log_level(),
+    MetadataList :: [{atom(), term()}],
+    Message :: string(),
+    Args :: list().
+log_unsafe(Level, MetadataList, Format, Args) when
+    is_list(MetadataList)
+->
     dispatch_log(?DEFAULT_SINK, Level, MetadataList, Format, Args, ?DEFAULT_TRUNCATION, unsafe).
 
 %% @doc Get lager metadata for current process
@@ -422,15 +530,15 @@ log_unsafe(Level, MetadataList, Format, Args)
 md() ->
     case logger:get_process_metadata() of
         undefined -> [];
-        Metadata ->
-            maps:to_list(Metadata)
+        Metadata -> maps:to_list(Metadata)
     end.
 
 %% @doc Set lager metadata for current process.
 %% Will badarg if you don't supply a list of {key, value} tuples keyed by atoms.
 -spec md([{atom(), any()}, ...]) -> ok.
-md(MetadataList)
-  when ?GUARD_IS_PROPER_LIST(MetadataList) ->
+md(MetadataList) when
+    ?GUARD_IS_PROPER_LIST(MetadataList)
+->
     Metadata = logger_metadata(MetadataList),
     logger:set_process_metadata(Metadata);
 md(_) ->
@@ -441,33 +549,33 @@ md(_) ->
 posix_error(_Error) ->
     error(notsup).
 
--spec pr(Value, Module) -> MaybePrettyValue
-    when Value :: Record | [Record] | NonRecord,
-         Record :: tuple(),
-         NonRecord :: term(),
-         Module :: module(),
-         MaybePrettyValue :: PrettyRecord | [PrettyRecord] | MaybePrettyNonRecord,
-         PrettyRecord :: {RecordName, PrettyRecordFields},
-         RecordName :: atom(),
-         PrettyRecordFields :: #{RecordFieldName => MaybePrettyValue},
-         RecordFieldName :: atom(),
-         MaybePrettyNonRecord :: term().
+-spec pr(Value, Module) -> MaybePrettyValue when
+    Value :: Record | [Record] | NonRecord,
+    Record :: tuple(),
+    NonRecord :: term(),
+    Module :: module(),
+    MaybePrettyValue :: PrettyRecord | [PrettyRecord] | MaybePrettyNonRecord,
+    PrettyRecord :: {RecordName, PrettyRecordFields},
+    RecordName :: atom(),
+    PrettyRecordFields :: #{RecordFieldName => MaybePrettyValue},
+    RecordFieldName :: atom(),
+    MaybePrettyNonRecord :: term().
 %% @doc Pretty-prints records with known definitions as tagged maps
 pr(Value, Module) ->
     pr(Value, Module, _Opts = []).
 
--spec pr(Value, Module, Opts) -> MaybePrettyValue
-    when Value :: Record | [Record] | NonRecord,
-         Record :: tuple(),
-         NonRecord :: term(),
-         Module :: module(),
-         MaybePrettyValue :: PrettyRecord | [PrettyRecord] | MaybePrettyNonRecord,
-         PrettyRecord :: {RecordName, PrettyRecordFields},
-         RecordName :: atom(),
-         PrettyRecordFields :: #{RecordFieldName => MaybePrettyValue},
-         RecordFieldName :: atom(),
-         MaybePrettyNonRecord :: term(),
-         Opts :: [pr_opt()].
+-spec pr(Value, Module, Opts) -> MaybePrettyValue when
+    Value :: Record | [Record] | NonRecord,
+    Record :: tuple(),
+    NonRecord :: term(),
+    Module :: module(),
+    MaybePrettyValue :: PrettyRecord | [PrettyRecord] | MaybePrettyNonRecord,
+    PrettyRecord :: {RecordName, PrettyRecordFields},
+    RecordName :: atom(),
+    PrettyRecordFields :: #{RecordFieldName => MaybePrettyValue},
+    RecordFieldName :: atom(),
+    MaybePrettyNonRecord :: term(),
+    Opts :: [pr_opt()].
 %% @doc Pretty-prints records with known definitions as tagged maps
 pr(Value, Module, Opts) ->
     Compress = proplists:get_value(compress, Opts, ?DEFAULT_PR_COMPRESS),
@@ -640,33 +748,36 @@ update_loglevel_config(_Sink) ->
 
 logger_metadata(MetadataList) ->
     case metadata_map(MetadataList) of
-        #{module := Module, function := Function} = Metadata
-          when not is_map_key(mfa, Metadata) ->
+        #{module := Module, function := Function} = Metadata when
+            not is_map_key(mfa, Metadata)
+        ->
             Arity = maps:get(arity, Metadata, 0),
             WithoutLagerSpecifics = maps:without([module, function, arity], Metadata),
             maps:put(mfa, {Module, Function, Arity}, WithoutLagerSpecifics);
-
         Metadata ->
             Metadata
     end.
 
 metadata_map(MetadataList) ->
     lists:foldl(
-      fun({Key, Value}, Acc) when is_atom(Key) ->
-              Acc#{ Key => Value };
-         (_, _) ->
-              error(badarg)
-      end,
-      #{}, MetadataList).
+        fun
+            ({Key, Value}, Acc) when is_atom(Key) ->
+                Acc#{Key => Value};
+            (_, _) ->
+                error(badarg)
+        end,
+        #{},
+        MetadataList
+    ).
 
 redirect_to_logger(Severity, MetadataList, Format, Args, Sink) ->
     % TODO other sinks?
     case Severity of
         none ->
-           ok;
+            ok;
         _ when Sink =:= ?DEFAULT_SINK ->
-           Metadata = logger_metadata(MetadataList),
-           logger:log(Severity, Format, Args, Metadata);
-       _ ->
-           {error, {bad_sink, Sink}}
+            Metadata = logger_metadata(MetadataList),
+            logger:log(Severity, Format, Args, Metadata);
+        _ ->
+            {error, {bad_sink, Sink}}
     end.

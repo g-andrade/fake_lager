@@ -68,7 +68,8 @@
 
 -elvis([
     {elvis_style, macro_naming_convention, disable},
-    {elvis_style, no_throw, disable}
+    {elvis_style, no_throw, disable},
+    {elvis_text_style, max_line_length, disable}
 ]).
 
 %%-------------------------------------------------------------------

@@ -51,7 +51,7 @@
 ]).
 
 new_helper_record() ->
-    #helper_record{typed_field = undefined}.
+    #helper_record{plain_field = undefined, typed_field = undefined, default_field = default}.
 
 debug(Fmt, Args) -> lager:debug(Fmt, Args).
 info(Fmt, Args) -> lager:info(Fmt, Args).

@@ -141,6 +141,8 @@
 
 -elvis([
     {elvis_style, god_modules, disable},
+    {elvis_style, max_function_arity, disable},
+    {elvis_style, no_god_modules, disable},
     {elvis_style, no_throw, disable}
 ]).
 
@@ -191,6 +193,8 @@
 %%-------------------------------------------------------------------
 
 -define(DEFAULT_PR_COMPRESS, false).
+
+-define(GUARD_IS_PROPER_LIST(V), (length((V)) >= 0)).
 
 %%-------------------------------------------------------------------
 %% Record and Type Definitions
@@ -426,7 +430,7 @@ md() ->
 %% Will badarg if you don't supply a list of {key, value} tuples keyed by atoms.
 -spec md([{atom(), any()}, ...]) -> ok.
 md(MetadataList)
-  when length(MetadataList) >= 0 ->
+  when ?GUARD_IS_PROPER_LIST(MetadataList) ->
     Metadata = logger_metadata(MetadataList),
     logger:set_process_metadata(Metadata);
 md(_) ->

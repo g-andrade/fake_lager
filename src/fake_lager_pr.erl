@@ -53,7 +53,7 @@
 %% Static Check Tweaks
 %% ------------------------------------------------------------------
 
--elvis([{elvis_style, macro_names, disable}]).
+-elvis([{elvis_style, macro_naming_convention, disable}]).
 
 %% ------------------------------------------------------------------
 %% API Function Definitions

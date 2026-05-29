@@ -5,7 +5,16 @@ SHELL := bash
 MAKEFLAGS += --warn-undefined-variables
 MAKEFLAGS += --no-builtin-rules
 
-export ERL_FLAGS = -enable-feature maybe_expr # needed for katana-code under OTP 25
+##
+
+MIX_CHECK=$(shell mix -v >/dev/null 2>/dev/null || /bin/echo "no")
+ifeq (no, $(MIX_CHECK))
+$(warning skipping Elixir-dependent tests)
+TEST_PROFILES = test
+else
+# $(info "mix check: $(MIX_CHECK)")
+TEST_PROFILES = test,elixir_test
+endif
 
 ## General Rules
 
@@ -21,13 +30,26 @@ clean:
 	@rebar3 clean -a
 .PHONY: clean
 
-check: xref hank-dead-code-cleaner elvis-linter dialyzer
+check: check-fast check-slow
 .NOTPARALLEL: check
 .PHONY: check
+
+check-fast: check-formatted xref hank-dead-code-cleaner elvis-linter
+.NOTPARALLEL: check-fast
+.PHONY: check-fast
+
+check-slow: dialyzer
+.NOTPARALLEL: check-slow
+.PHONY: check-slow
 
 test: eunit ct
 .NOTPARALLEL: test
 .PHONY: test
+
+format:
+	@rebar3 fmt
+.NOTPARALLEL: format
+.PHONY: format
 
 ## Tests
 
@@ -41,8 +63,16 @@ eunit:
 
 ## Checks
 
+check-formatted:
+	@if rebar3 plugins list | grep '^erlfmt\>' >/dev/null; then \
+		rebar3 fmt --check; \
+	else \
+		echo >&2 "WARN: skipping rebar3 erlfmt check"; \
+	fi
+.PHONY: check-formatted
+
 xref:
-	@rebar3 as test xref
+	@rebar3 xref
 .PHONY: xref
 
 hank-dead-code-cleaner:
@@ -62,19 +92,37 @@ elvis-linter:
 .PHONY: elvis-linter
 
 dialyzer:
-	@rebar3 as test dialyzer
+	@rebar3 dialyzer
 .PHONY: dialyzer
 
 ## Shell, docs and publication
 
+publish: doc
+publish:
+	@rebar3 hex publish --doc-dir=doc
+.NOTPARALLEL: publish
+
 shell: export ERL_FLAGS = +pc unicode
 shell:
-	@rebar3 as test shell
+	@rebar3 as shell shell
 
-doc-dry:
-	@rebar3 hex build
-.PHONY: doc-dry
+doc: SOURCE_REF := $(shell git describe --tags --exact-match 2>/dev/null || git rev-parse --short HEAD)
+doc: tmp/ex_doc
+doc:
+	rebar3 as docs edoc; \
+		./tmp/ex_doc "fake_lager" "${SOURCE_REF}" \
+		_build/docs/lib/fake_lager/ebin \
+		-c ex_doc.config \
+		--source-ref "${SOURCE_REF}";
+.PHONY: doc
 
-publish:
-publish: doc-dry
-	@rebar3 hex publish
+tmp/ex_doc: EX_DOC_VER=0.40.2
+tmp/ex_doc: OTP_VER := $(shell erl -noshell -eval 'io:fwrite("~s", [erlang:system_info(otp_release)]), init:stop().')
+tmp/ex_doc: | tmp
+tmp/ex_doc:
+	curl -fL -o tmp/ex_doc \
+		"https://github.com/elixir-lang/ex_doc/releases/download/v${EX_DOC_VER}/ex_doc_otp_${OTP_VER}"; \
+		chmod a+x tmp/ex_doc
+
+tmp:
+	mkdir tmp

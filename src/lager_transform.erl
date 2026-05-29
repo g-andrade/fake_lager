@@ -67,7 +67,7 @@
 %% ------------------------------------------------------------------
 
 -elvis([
-    {elvis_style, macro_names, disable},
+    {elvis_style, macro_naming_convention, disable},
     {elvis_style, no_throw, disable}
 ]).
 
@@ -168,7 +168,7 @@ mapfold_ast_statement(Statement, Context) ->
 walk_function_statements({call, Anno,
                           {remote, RemoteAnno,
                            {atom, _ModuleAnno, Module},
-                           {atom, _FunctionAnno, Function}}=InvocationClause,
+                           {atom, _FunctionAnno, Function}} = InvocationClause,
                           Args},
                          Context) ->
     Arity = length(Args),
@@ -335,7 +335,7 @@ transform_metadata_list_into_map_field_associations(ExtraMetadataList) ->
 
 transform_metadata_list_into_map_field_associations_recur(Clause, Acc) ->
     case Clause of
-        {cons, ConsAnno, {tuple, _, [{atom, _, _}=KeyTerm, ValueTerm]}, NextClause} ->
+        {cons, ConsAnno, {tuple, _, [{atom, _, _} = KeyTerm, ValueTerm]}, NextClause} ->
             Assoc = {map_field_assoc, ConsAnno, KeyTerm, ValueTerm},
             UpdatedAcc = [Assoc | Acc],
             transform_metadata_list_into_map_field_associations_recur(NextClause, UpdatedAcc);

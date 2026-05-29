@@ -5,17 +5,6 @@ SHELL := bash
 MAKEFLAGS += --warn-undefined-variables
 MAKEFLAGS += --no-builtin-rules
 
-##
-
-MIX_CHECK=$(shell mix -v >/dev/null 2>/dev/null || /bin/echo "no")
-ifeq (no, $(MIX_CHECK))
-$(warning skipping Elixir-dependent tests)
-TEST_PROFILES = test
-else
-# $(info "mix check: $(MIX_CHECK)")
-TEST_PROFILES = test,elixir_test
-endif
-
 ## General Rules
 
 all: compile

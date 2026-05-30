@@ -22,6 +22,12 @@ make eunit            # rebar3 eunit
 # Run a single CT suite
 rebar3 ct --suite test/fake_lager_tests_pr_SUITE
 
+# CT suites (for reference)
+#   fake_lager_tests_transform_SUITE  — parse transform AST rewriting
+#   fake_lager_tests_lager_api_SUITE  — lager public API surface
+#   fake_lager_tests_lager_msg_SUITE  — lager_msg backward-compat stub
+#   fake_lager_tests_pr_SUITE         — record pretty-printing
+
 # Format code
 make format           # rebar3 fmt
 

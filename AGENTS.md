@@ -74,7 +74,6 @@ The library works through a **compile-time parse transform** (`lager_transform`)
 ### OTP version considerations
 
 - Supported: OTP 24–28 (OTP 21+ declared in `rebar.config` but only 24+ is truly supported per README).
-- The `NATIVE_RECORDS` compile flag is set on OTP 29+ for future native record support.
 - `rebar.config.script` conditionally removes `rebar3_hank`, `erlfmt`, and `rebar3_lint` plugins on OTP ≤ 25 where they are incompatible.
 - `NO_CT_SUITE_BEHAVIOUR` is defined on OTP 22.x and early 23.x (no `ct_suite` behaviour).
 

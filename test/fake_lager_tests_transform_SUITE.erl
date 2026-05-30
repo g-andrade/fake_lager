@@ -61,9 +61,44 @@
     three_arg_form_with_dynamic_metadata/1,
     literal_args_produce_immediate_message/1,
     call_in_args_produces_lazy_message/1,
+    infix_op_in_args_produces_lazy_message/1,
+    prefix_op_in_args_produces_lazy_message/1,
+    case_expr_in_args_produces_lazy_message/1,
+    if_expr_in_args_produces_lazy_message/1,
+    receive_expr_in_args_produces_lazy_message/1,
     unsafe_level_aliases_produce_logger_events/1,
-    pr_context_embedded_for_records/1
+    pr_context_embedded_for_records/1,
+    info_in_case_body/1,
+    info_in_nested_case_body/1,
+    info_as_case_scrutinee/1,
+    info_in_if_body/1,
+    info_in_receive_body/1,
+    info_as_receive_after_timeout/1,
+    info_in_receive_after_body/1,
+    info_in_try_body/1,
+    info_in_catch_handler/1,
+    info_in_try_after_body/1,
+    info_in_begin_end/1,
+    info_in_anon_fun/1,
+    info_in_named_fun/1,
+    info_in_list_comp_body/1,
+    info_in_list_comp_generator/1,
+    info_in_list_comp_filter/1,
+    info_in_binary_comp/1,
+    info_in_tuple/1,
+    info_in_list_cons/1,
+    info_in_map_construction/1,
+    info_in_map_update/1,
+    info_in_binary_segment/1,
+    info_in_catch_expr/1
 ]).
+
+-ifdef(NATIVE_RECORDS).
+-export([
+    info_in_native_record_construction/1,
+    info_in_native_record_update/1
+]).
+-endif.
 
 %% ------------------------------------------------------------------
 %% Macro Definitions
@@ -72,6 +107,15 @@
 -define(CAPTURE_HANDLER, test_transform_capture).
 -define(LOG_TIMEOUT_MS, 500).
 -define(H, fake_lager_tests_transform_helper).
+
+-ifdef(NATIVE_RECORDS).
+-define(NATIVE_RECORD_EMBEDDING_TEST_CASES, [
+    info_in_native_record_construction,
+    info_in_native_record_update
+]).
+-else.
+-define(NATIVE_RECORD_EMBEDDING_TEST_CASES, []).
+-endif.
 
 %% ------------------------------------------------------------------
 %% Static Check Tweaks
@@ -105,9 +149,43 @@ groups() ->
                 three_arg_form_with_dynamic_metadata,
                 literal_args_produce_immediate_message,
                 call_in_args_produces_lazy_message,
+                infix_op_in_args_produces_lazy_message,
+                prefix_op_in_args_produces_lazy_message,
+                case_expr_in_args_produces_lazy_message,
+                if_expr_in_args_produces_lazy_message,
+                receive_expr_in_args_produces_lazy_message,
                 unsafe_level_aliases_produce_logger_events,
                 pr_context_embedded_for_records
             ]
+        },
+        {
+            embedding_tests,
+            [],
+            [
+                info_in_case_body,
+                info_in_nested_case_body,
+                info_as_case_scrutinee,
+                info_in_if_body,
+                info_in_receive_body,
+                info_as_receive_after_timeout,
+                info_in_receive_after_body,
+                info_in_try_body,
+                info_in_catch_handler,
+                info_in_try_after_body,
+                info_in_begin_end,
+                info_in_anon_fun,
+                info_in_named_fun,
+                info_in_list_comp_body,
+                info_in_list_comp_generator,
+                info_in_list_comp_filter,
+                info_in_binary_comp,
+                info_in_tuple,
+                info_in_list_cons,
+                info_in_map_construction,
+                info_in_map_update,
+                info_in_binary_segment,
+                info_in_catch_expr
+            ] ++ ?NATIVE_RECORD_EMBEDDING_TEST_CASES
         }
     ].
 
@@ -115,8 +193,10 @@ init_per_suite(Config) ->
     % Compile the helper from source at runtime so that lager_transform:parse_transform/2
     % executes while the cover tool is active, making the transform's code paths measurable.
     HelperSrc = filename:join(filename:dirname(?FILE), "fake_lager_tests_transform_helper.erl"),
+    OtpRelease = list_to_integer(erlang:system_info(otp_release)),
+    NativeRecordsOpt = [{d, 'NATIVE_RECORDS'} || OtpRelease >= 29],
     {ok, fake_lager_tests_transform_helper, Binary} =
-        compile:file(HelperSrc, [binary, nowarn_missing_spec]),
+        compile:file(HelperSrc, [binary, nowarn_missing_spec | NativeRecordsOpt]),
     {module, _} = code:load_binary(fake_lager_tests_transform_helper, HelperSrc, Binary),
     PrimaryConfig = logger:get_primary_config(),
     ok = logger:set_primary_config(level, all),
@@ -226,6 +306,51 @@ call_in_args_produces_lazy_message(_Config) ->
         ExpectedContent -> ok
     end.
 
+infix_op_in_args_produces_lazy_message(_Config) ->
+    ?H:info_lazy_infix_op(5),
+    #{msg := Msg} = receive_log_event(),
+    ExpectedContent = {"~p", [6]},
+    case Msg of
+        {F, no_args} when is_function(F, 1) -> ?assertEqual(ExpectedContent, F(no_args));
+        ExpectedContent -> ok
+    end.
+
+prefix_op_in_args_produces_lazy_message(_Config) ->
+    ?H:info_lazy_prefix_op(3),
+    #{msg := Msg} = receive_log_event(),
+    ExpectedContent = {"~p", [-3]},
+    case Msg of
+        {F, no_args} when is_function(F, 1) -> ?assertEqual(ExpectedContent, F(no_args));
+        ExpectedContent -> ok
+    end.
+
+case_expr_in_args_produces_lazy_message(_Config) ->
+    ?H:info_lazy_case_expr(foo),
+    #{msg := Msg} = receive_log_event(),
+    ExpectedContent = {"~p", [bar]},
+    case Msg of
+        {F, no_args} when is_function(F, 1) -> ?assertEqual(ExpectedContent, F(no_args));
+        ExpectedContent -> ok
+    end.
+
+if_expr_in_args_produces_lazy_message(_Config) ->
+    ?H:info_lazy_if_expr(foo),
+    #{msg := Msg} = receive_log_event(),
+    ExpectedContent = {"~p", [bar]},
+    case Msg of
+        {F, no_args} when is_function(F, 1) -> ?assertEqual(ExpectedContent, F(no_args));
+        ExpectedContent -> ok
+    end.
+
+receive_expr_in_args_produces_lazy_message(_Config) ->
+    ?H:info_lazy_receive_expr(),
+    #{msg := Msg} = receive_log_event(),
+    ExpectedContent = {"~p", [none]},
+    case Msg of
+        {F, no_args} when is_function(F, 1) -> ?assertEqual(ExpectedContent, F(no_args));
+        ExpectedContent -> ok
+    end.
+
 unsafe_level_aliases_produce_logger_events(_Config) ->
     ?H:debug_unsafe("~p", [debug]),
     ?assertEqual(debug, maps:get(level, receive_log_event())),
@@ -245,6 +370,108 @@ pr_context_embedded_for_records(_Config) ->
         }},
         Result
     ).
+
+info_in_case_body(_Config) ->
+    ?H:info_in_case_body(),
+    receive_log_event().
+
+info_in_nested_case_body(_Config) ->
+    ?H:info_in_nested_case_body(),
+    receive_log_event().
+
+info_as_case_scrutinee(_Config) ->
+    ?H:info_as_case_scrutinee(),
+    receive_log_event().
+
+info_in_if_body(_Config) ->
+    ?H:info_in_if_body(),
+    receive_log_event().
+
+info_in_receive_body(_Config) ->
+    ?H:info_in_receive_body(),
+    receive_log_event().
+
+info_as_receive_after_timeout(_Config) ->
+    ?H:info_as_receive_after_timeout(),
+    receive_log_event().
+
+info_in_receive_after_body(_Config) ->
+    ?H:info_in_receive_after_body(),
+    receive_log_event().
+
+info_in_try_body(_Config) ->
+    ?H:info_in_try_body(),
+    receive_log_event().
+
+info_in_catch_handler(_Config) ->
+    ?H:info_in_catch_handler(),
+    receive_log_event().
+
+info_in_try_after_body(_Config) ->
+    ?H:info_in_try_after_body(),
+    receive_log_event().
+
+info_in_begin_end(_Config) ->
+    ?H:info_in_begin_end(),
+    receive_log_event().
+
+info_in_anon_fun(_Config) ->
+    ?H:info_in_anon_fun(),
+    receive_log_event().
+
+info_in_named_fun(_Config) ->
+    ?H:info_in_named_fun(),
+    receive_log_event().
+
+info_in_list_comp_body(_Config) ->
+    ?H:info_in_list_comp_body(),
+    receive_log_event().
+
+info_in_list_comp_generator(_Config) ->
+    ?H:info_in_list_comp_generator(),
+    receive_log_event().
+
+info_in_list_comp_filter(_Config) ->
+    ?H:info_in_list_comp_filter(),
+    receive_log_event().
+
+info_in_binary_comp(_Config) ->
+    ?H:info_in_binary_comp(),
+    receive_log_event().
+
+info_in_tuple(_Config) ->
+    ?H:info_in_tuple(),
+    receive_log_event().
+
+info_in_list_cons(_Config) ->
+    ?H:info_in_list_cons(),
+    receive_log_event().
+
+info_in_map_construction(_Config) ->
+    ?H:info_in_map_construction(),
+    receive_log_event().
+
+info_in_map_update(_Config) ->
+    ?H:info_in_map_update(),
+    receive_log_event().
+
+info_in_binary_segment(_Config) ->
+    ?H:info_in_binary_segment(),
+    receive_log_event().
+
+info_in_catch_expr(_Config) ->
+    ?H:info_in_catch_expr(),
+    receive_log_event().
+
+-ifdef(NATIVE_RECORDS).
+info_in_native_record_construction(_Config) ->
+    ?H:info_in_native_record_construction(),
+    receive_log_event().
+
+info_in_native_record_update(_Config) ->
+    ?H:info_in_native_record_update(),
+    receive_log_event().
+-endif.
 
 %% ------------------------------------------------------------------
 %% Internal Function Definitions

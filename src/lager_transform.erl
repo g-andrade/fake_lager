@@ -183,7 +183,7 @@ walk_function_statements(
     Context
 ) ->
     Arity = length(Args),
-    MappedArgs = walk_function_statements(Args, Context),
+    MappedArgs = [walk_function_statements(Arg, Context) || Arg <- Args],
     SinkModules = Context#function_context.sinks,
     case
         lists:member(Module, SinkModules) andalso
@@ -203,16 +203,15 @@ walk_function_statements(
         _ ->
             {call, Anno, InvocationClause, MappedArgs}
     end;
-walk_function_statements(Statement, Context) when is_tuple(Statement) ->
-    % very lazy way of walking the whole thing without explicit patterning
-    % of all children types
-    StatementParts = tuple_to_list(Statement),
-    MappedStatementParts = walk_function_statements(StatementParts, Context),
-    list_to_tuple(MappedStatementParts);
-walk_function_statements(Statements, Context) when is_list(Statements) ->
-    [walk_function_statements(Statement, Context) || Statement <- Statements];
-walk_function_statements(StatementPart, _Context) ->
-    StatementPart.
+walk_function_statements(Node, Context) when is_tuple(Node) ->
+    erl_syntax:revert(
+        erl_syntax_lib:map_subtrees(
+            fun(Child) -> walk_function_statements(Child, Context) end,
+            Node
+        )
+    );
+walk_function_statements(Node, _Context) ->
+    Node.
 
 %%-------------------------------------------------------------------
 %% Internal Function Definitions - Transformation of Logging Calls
@@ -234,10 +233,11 @@ transform_call_args(Anno, Args, Module, Context) ->
 
 is_formatting_prepararion_presumably_expensive(Args) ->
     case Args of
-        [_Fmt] ->
-            is_term_evaluation_presumably_expensive(Args);
-        [_Fmt, _FmtArgs] ->
-            is_term_evaluation_presumably_expensive(Args);
+        [Fmt] ->
+            is_term_evaluation_presumably_expensive(Fmt);
+        [Fmt, FmtArgs] ->
+            is_term_evaluation_presumably_expensive(Fmt) orelse
+                is_term_evaluation_presumably_expensive(FmtArgs);
         [_, Fmt, FmtArgs] ->
             is_term_evaluation_presumably_expensive(Fmt) orelse
                 is_term_evaluation_presumably_expensive(FmtArgs)
@@ -426,34 +426,29 @@ check_for_unsupported_options(Options) ->
     ).
 
 % XXX: should binary construction be considered expensive?
-is_term_evaluation_presumably_expensive({call, _Anno, _InvocationClause, _Args}) ->
-    % any function call
-    true;
-is_term_evaluation_presumably_expensive({'receive', _Anno, _Patterns}) ->
-    % receive pattern
-    true;
-is_term_evaluation_presumably_expensive({'receive', _Anno, _Patterns, _Timeout, _TimeoutHandlers}) ->
-    % receive pattern (with timeouts)
-    true;
-is_term_evaluation_presumably_expensive({op, _Anno, _Pid, _Arg}) ->
-    % unary operator (e.g. `-')
-    true;
-is_term_evaluation_presumably_expensive({op, _Anno, _Pid, _Arg1, _Arg2}) ->
-    % binary operator (e.g. `+')
-    true;
-is_term_evaluation_presumably_expensive({'case', _Anno, _Expression, _Patterns}) ->
-    % case block
-    true;
-is_term_evaluation_presumably_expensive({'if', _Anno, _Patterns}) ->
-    % if block
-    true;
-is_term_evaluation_presumably_expensive(Term) when is_tuple(Term) ->
-    TermParts = tuple_to_list(Term),
-    lists:any(fun is_term_evaluation_presumably_expensive/1, TermParts);
-is_term_evaluation_presumably_expensive(Term) when is_list(Term) ->
-    lists:any(fun is_term_evaluation_presumably_expensive/1, Term);
-is_term_evaluation_presumably_expensive(_) ->
-    false.
+is_term_evaluation_presumably_expensive(Term) ->
+    erl_syntax_lib:fold(
+        fun(Node, Acc) -> Acc orelse is_expensive_ast_node(Node) end,
+        false,
+        Term
+    ).
+
+is_expensive_ast_node(Node) ->
+    case erl_syntax:type(Node) of
+        % any function call
+        application -> true;
+        % receive (with or without timeout)
+        receive_expr -> true;
+        % unary operator (e.g. `-')
+        prefix_expr -> true;
+        % binary operator (e.g. `+')
+        infix_expr -> true;
+        % case block
+        case_expr -> true;
+        % if block
+        if_expr -> true;
+        _ -> false
+    end.
 
 %write_terms(FilenameSuffix, List) ->
 %    {attribute, _Anno, module, Module} = lists:keyfind(module, 3, List),

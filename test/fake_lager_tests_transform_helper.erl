@@ -77,7 +77,10 @@
     info_in_catch_expr/0,
     debug_unsafe/2,
     info_unsafe/2,
-    warning_unsafe/2
+    warning_unsafe/2,
+    audit_info/2,
+    audit_info_with_meta/3,
+    metrics_info/2
 ]).
 
 -ifdef(NATIVE_RECORDS).
@@ -310,3 +313,12 @@ info_in_native_record_update() ->
 debug_unsafe(Fmt, Args) -> lager:debug_unsafe(Fmt, Args).
 info_unsafe(Fmt, Args) -> lager:info_unsafe(Fmt, Args).
 warning_unsafe(Fmt, Args) -> lager:warning_unsafe(Fmt, Args).
+
+%% Calls through custom sinks. The suite compiles this module with
+%% `{lager_extra_sinks, [audit, metrics]}', so the parse transform recognises
+%% `audit' and `metrics' as sink modules and rewrites these calls into `logger'
+%% calls tagged with `lager_sink => <sink>'. The sink modules themselves need
+%% not exist at runtime: no reference to them survives the transform.
+audit_info(Fmt, Args) -> audit:info(Fmt, Args).
+audit_info_with_meta(ExtraMeta, Fmt, Args) -> audit:info(ExtraMeta, Fmt, Args).
+metrics_info(Fmt, Args) -> metrics:info(Fmt, Args).

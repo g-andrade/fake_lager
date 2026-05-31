@@ -70,6 +70,11 @@
     args_not_evaluated_when_level_disabled/1,
     unsafe_level_aliases_produce_logger_events/1,
     pr_context_embedded_for_records/1,
+    custom_sink_produces_logger_event/1,
+    custom_sink_metadata_contains_sink_name/1,
+    default_sink_has_no_sink_metadata/1,
+    distinct_sinks_are_tagged_distinctly/1,
+    custom_sink_merges_sink_name_with_user_metadata/1,
     info_in_case_body/1,
     info_in_nested_case_body/1,
     info_as_case_scrutinee/1,
@@ -164,6 +169,17 @@ groups() ->
             ]
         },
         {
+            custom_sink_tests,
+            [],
+            [
+                custom_sink_produces_logger_event,
+                custom_sink_metadata_contains_sink_name,
+                default_sink_has_no_sink_metadata,
+                distinct_sinks_are_tagged_distinctly,
+                custom_sink_merges_sink_name_with_user_metadata
+            ]
+        },
+        {
             embedding_tests,
             [],
             [
@@ -201,7 +217,12 @@ init_per_suite(Config) ->
     OtpRelease = list_to_integer(erlang:system_info(otp_release)),
     NativeRecordsOpt = [{d, 'NATIVE_RECORDS'} || OtpRelease >= 29],
     {ok, fake_lager_tests_transform_helper, Binary} =
-        compile:file(HelperSrc, [binary, nowarn_missing_spec | NativeRecordsOpt]),
+        compile:file(HelperSrc, [
+            binary,
+            nowarn_missing_spec,
+            {lager_extra_sinks, [audit, metrics]}
+            | NativeRecordsOpt
+        ]),
     {module, _} = code:load_binary(fake_lager_tests_transform_helper, HelperSrc, Binary),
     PrimaryConfig = logger:get_primary_config(),
     ok = logger:set_primary_config(level, all),
@@ -377,6 +398,42 @@ pr_context_embedded_for_records(_Config) ->
         }},
         Result
     ).
+
+%% The following cases cover logging through custom sinks. The helper is compiled
+%% with `{lager_extra_sinks, [audit, metrics]}' (see init_per_suite), so the
+%% transform recognises those modules as sinks and tags each rewritten call's
+%% metadata with `lager_sink => <sink>'.
+
+custom_sink_produces_logger_event(_Config) ->
+    ?H:audit_info("audit ~p", [event]),
+    Event = receive_log_event(),
+    ?assertEqual(info, maps:get(level, Event)),
+    ?assertEqual({"audit ~p", [event]}, maps:get(msg, Event)).
+
+custom_sink_metadata_contains_sink_name(_Config) ->
+    ?H:audit_info("audit", []),
+    #{meta := Meta} = receive_log_event(),
+    ?assertEqual(audit, maps:get(lager_sink, Meta)).
+
+%% Negative control: the default `lager' sink must NOT inject a `lager_sink' key,
+%% exercising the `lager ->' branch in lager_transform:base_call_metadata/3.
+default_sink_has_no_sink_metadata(_Config) ->
+    ?H:info("default", []),
+    #{meta := Meta} = receive_log_event(),
+    ?assertNot(maps:is_key(lager_sink, Meta)).
+
+distinct_sinks_are_tagged_distinctly(_Config) ->
+    ?H:audit_info("a", []),
+    #{meta := AuditMeta} = receive_log_event(),
+    ?H:metrics_info("m", []),
+    #{meta := MetricsMeta} = receive_log_event(),
+    ?assertEqual(audit, maps:get(lager_sink, AuditMeta)),
+    ?assertEqual(metrics, maps:get(lager_sink, MetricsMeta)).
+
+custom_sink_merges_sink_name_with_user_metadata(_Config) ->
+    ?H:audit_info_with_meta([{request_id, <<"r1">>}], "audit", []),
+    #{meta := Meta} = receive_log_event(),
+    ?assertMatch(#{lager_sink := audit, request_id := <<"r1">>}, Meta).
 
 info_in_case_body(_Config) ->
     ?H:info_in_case_body(),

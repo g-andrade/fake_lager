@@ -100,7 +100,7 @@ doc: tmp/ex_doc
 doc:
 	rebar3 as docs edoc; \
 		./tmp/ex_doc "fake_lager" "${SOURCE_REF}" \
-		_build/docs/lib/fake_lager/ebin \
+		_build/docs/lib/lager/ebin \
 		-c ex_doc.config \
 		--source-ref "${SOURCE_REF}";
 .PHONY: doc

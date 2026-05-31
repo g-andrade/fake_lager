@@ -50,7 +50,7 @@ The library works through a **compile-time parse transform** (`lager_transform`)
 1. `lager_transform:parse_transform/2` walks the AST of any module that uses it.
 2. It intercepts calls to `lager:debug/info/warning/...` (and extra sinks) and rewrites them to `logger:debug/info/warning/...`.
 3. Log metadata (`mfa`, `file`, `line`, `lager_sink`) is injected as a map literal at compile time.
-4. If the format string or args involve non-trivial evaluation (function calls, operators, case/receive), the message is wrapped in a fun for lazy evaluation — otherwise it is passed directly.
+4. Each rewritten call is wrapped in a compile-time level gate — `case logger:allow(Level, Module) of true -> logger:macro_log(#{}, Level, Format, Args, Metadata); false -> ok end` — exactly as logger's own `?LOG_*` macros do (and as lager's original inlined level check did). The format string, arguments and metadata live only in the `true` branch, so they are evaluated exclusively when the level is enabled; there is no fun-wrapping and no argument-cost heuristic. The enabled branch dispatches via `logger:macro_log/5` (not `logger:Level/3`) so that the level check is performed only once — `logger:Level/3` would re-run `logger_config:allow/2` internally via `do_log/3`, whereas `macro_log/5` goes straight to `log_allowed/4`.
 
 ### Record pretty-printing
 

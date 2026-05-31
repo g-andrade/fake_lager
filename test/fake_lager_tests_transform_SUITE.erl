@@ -59,13 +59,15 @@
     two_arg_form_is_supported/1,
     three_arg_form_with_static_metadata/1,
     three_arg_form_with_dynamic_metadata/1,
-    literal_args_produce_immediate_message/1,
-    call_in_args_produces_lazy_message/1,
-    infix_op_in_args_produces_lazy_message/1,
-    prefix_op_in_args_produces_lazy_message/1,
-    case_expr_in_args_produces_lazy_message/1,
-    if_expr_in_args_produces_lazy_message/1,
-    receive_expr_in_args_produces_lazy_message/1,
+    literal_args_produce_correct_message/1,
+    call_in_args_produces_correct_message/1,
+    infix_op_in_args_produces_correct_message/1,
+    prefix_op_in_args_produces_correct_message/1,
+    case_expr_in_args_produces_correct_message/1,
+    if_expr_in_args_produces_correct_message/1,
+    receive_expr_in_args_produces_correct_message/1,
+    args_evaluated_when_level_enabled/1,
+    args_not_evaluated_when_level_disabled/1,
     unsafe_level_aliases_produce_logger_events/1,
     pr_context_embedded_for_records/1,
     info_in_case_body/1,
@@ -122,6 +124,7 @@
 %% ------------------------------------------------------------------
 
 -elvis([
+    {elvis_style, no_god_modules, disable},
     {elvis_style, no_invalid_dynamic_calls, disable}
 ]).
 
@@ -147,13 +150,15 @@ groups() ->
                 two_arg_form_is_supported,
                 three_arg_form_with_static_metadata,
                 three_arg_form_with_dynamic_metadata,
-                literal_args_produce_immediate_message,
-                call_in_args_produces_lazy_message,
-                infix_op_in_args_produces_lazy_message,
-                prefix_op_in_args_produces_lazy_message,
-                case_expr_in_args_produces_lazy_message,
-                if_expr_in_args_produces_lazy_message,
-                receive_expr_in_args_produces_lazy_message,
+                literal_args_produce_correct_message,
+                call_in_args_produces_correct_message,
+                infix_op_in_args_produces_correct_message,
+                prefix_op_in_args_produces_correct_message,
+                case_expr_in_args_produces_correct_message,
+                if_expr_in_args_produces_correct_message,
+                receive_expr_in_args_produces_correct_message,
+                args_evaluated_when_level_enabled,
+                args_not_evaluated_when_level_disabled,
                 unsafe_level_aliases_produce_logger_events,
                 pr_context_embedded_for_records
             ]
@@ -290,65 +295,67 @@ three_arg_form_with_dynamic_metadata(_Config) ->
     #{meta := Meta} = receive_log_event(),
     ?assertMatch(#{mfa := _, request_id := <<"xyz">>}, Meta).
 
-literal_args_produce_immediate_message(_Config) ->
+%% The following cases verify that non-trivial argument expressions (calls,
+%% operators, case/if/receive blocks) survive the transform and produce the
+%% correct, fully-evaluated message content when the level is enabled. The
+%% complementary `args_*_when_level_*' cases below cover *whether* such
+%% arguments are evaluated at all, which is the level gate's actual job.
+
+literal_args_produce_correct_message(_Config) ->
     ?H:info_literal_args(),
     #{msg := Msg} = receive_log_event(),
     ?assertEqual({"~p", [hello]}, Msg).
 
-call_in_args_produces_lazy_message(_Config) ->
-    ?H:info_lazy_args(),
+call_in_args_produces_correct_message(_Config) ->
+    ?H:info_call_in_args(),
     #{msg := Msg} = receive_log_event(),
-    % The transform wraps expensive args in a lazy fun; OTP 29+ evaluates the
-    % fun before dispatching to handlers, so the handler may receive either.
-    ExpectedContent = {"~s", ["42"]},
-    case Msg of
-        {F, no_args} when is_function(F, 1) -> ?assertEqual(ExpectedContent, F(no_args));
-        ExpectedContent -> ok
-    end.
+    ?assertEqual({"~s", ["42"]}, Msg).
 
-infix_op_in_args_produces_lazy_message(_Config) ->
-    ?H:info_lazy_infix_op(5),
+infix_op_in_args_produces_correct_message(_Config) ->
+    ?H:info_infix_op_in_args(5),
     #{msg := Msg} = receive_log_event(),
-    ExpectedContent = {"~p", [6]},
-    case Msg of
-        {F, no_args} when is_function(F, 1) -> ?assertEqual(ExpectedContent, F(no_args));
-        ExpectedContent -> ok
-    end.
+    ?assertEqual({"~p", [6]}, Msg).
 
-prefix_op_in_args_produces_lazy_message(_Config) ->
-    ?H:info_lazy_prefix_op(3),
+prefix_op_in_args_produces_correct_message(_Config) ->
+    ?H:info_prefix_op_in_args(3),
     #{msg := Msg} = receive_log_event(),
-    ExpectedContent = {"~p", [-3]},
-    case Msg of
-        {F, no_args} when is_function(F, 1) -> ?assertEqual(ExpectedContent, F(no_args));
-        ExpectedContent -> ok
-    end.
+    ?assertEqual({"~p", [-3]}, Msg).
 
-case_expr_in_args_produces_lazy_message(_Config) ->
-    ?H:info_lazy_case_expr(foo),
+case_expr_in_args_produces_correct_message(_Config) ->
+    ?H:info_case_expr_in_args(foo),
     #{msg := Msg} = receive_log_event(),
-    ExpectedContent = {"~p", [bar]},
-    case Msg of
-        {F, no_args} when is_function(F, 1) -> ?assertEqual(ExpectedContent, F(no_args));
-        ExpectedContent -> ok
-    end.
+    ?assertEqual({"~p", [bar]}, Msg).
 
-if_expr_in_args_produces_lazy_message(_Config) ->
-    ?H:info_lazy_if_expr(foo),
+if_expr_in_args_produces_correct_message(_Config) ->
+    ?H:info_if_expr_in_args(foo),
     #{msg := Msg} = receive_log_event(),
-    ExpectedContent = {"~p", [bar]},
-    case Msg of
-        {F, no_args} when is_function(F, 1) -> ?assertEqual(ExpectedContent, F(no_args));
-        ExpectedContent -> ok
-    end.
+    ?assertEqual({"~p", [bar]}, Msg).
 
-receive_expr_in_args_produces_lazy_message(_Config) ->
-    ?H:info_lazy_receive_expr(),
+receive_expr_in_args_produces_correct_message(_Config) ->
+    ?H:info_receive_expr_in_args(),
     #{msg := Msg} = receive_log_event(),
-    ExpectedContent = {"~p", [none]},
-    case Msg of
-        {F, no_args} when is_function(F, 1) -> ?assertEqual(ExpectedContent, F(no_args));
-        ExpectedContent -> ok
+    ?assertEqual({"~p", [none]}, Msg).
+
+args_evaluated_when_level_enabled(_Config) ->
+    % Primary level is `all' (see init_per_suite) with no module override, so the
+    % `logger:allow/2' gate is open: the argument expression must be evaluated and
+    % the message emitted.
+    ?H:info_with_arg_side_effect(self()),
+    ?assertEqual(arg_evaluated, receive_arg_signal()),
+    #{msg := Msg} = receive_log_event(),
+    ?assertEqual({"~p", [evaluated]}, Msg).
+
+args_not_evaluated_when_level_disabled(_Config) ->
+    % Raising this module's level above `info' closes the `logger:allow/2' gate, so
+    % the rewritten call short-circuits to `ok': neither the argument's side effect
+    % nor a log event must occur.
+    ok = logger:set_module_level(?H, error),
+    try
+        ?H:info_with_arg_side_effect(self()),
+        ?assertEqual(no_signal, receive_arg_signal()),
+        expect_no_log_event()
+    after
+        ok = logger:unset_module_level(?H)
     end.
 
 unsafe_level_aliases_produce_logger_events(_Config) ->
@@ -490,4 +497,11 @@ expect_no_log_event() ->
             ct:fail("Unexpected log event: ~p", [Unexpected])
     after 100 ->
         ok
+    end.
+
+receive_arg_signal() ->
+    receive
+        arg_evaluated -> arg_evaluated
+    after 100 ->
+        no_signal
     end.

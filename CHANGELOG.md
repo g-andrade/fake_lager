@@ -12,6 +12,21 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - OTP 28.5 to CI
 - OTP 29.0 to CI
 
+### Changed
+
+- logging calls to gate evaluation on a compile-time `logger:allow/2` level
+check (mirroring `logger`'s own `?LOG_*` macros and lager's original inlined
+level check), replacing the previous heuristic that conditionally wrapped
+"expensive" arguments in a fun
+- log format and argument expressions to be evaluated only when the log level
+is enabled, restoring lager's original semantics; previously, arguments deemed
+inexpensive were evaluated unconditionally. As a result, **the evaluation of a
+log argument — including any side effects and exceptions it may raise — now
+occurs only when the level is enabled; a previously-unconditional crash in a
+log argument will be masked while that level is disabled**
+- parse transform to walk the AST through `erl_syntax_lib` rather than by
+blindly decomposing tuples, hardening the rewrite across all expression shapes
+
 ## [1.0.1] - 2026-04-06
 
 ### Added

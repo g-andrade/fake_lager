@@ -45,12 +45,13 @@
     info_static_meta/0,
     info_dynamic_meta/1,
     info_literal_args/0,
-    info_lazy_args/0,
-    info_lazy_infix_op/1,
-    info_lazy_prefix_op/1,
-    info_lazy_case_expr/1,
-    info_lazy_if_expr/1,
-    info_lazy_receive_expr/0,
+    info_call_in_args/0,
+    info_infix_op_in_args/1,
+    info_prefix_op_in_args/1,
+    info_case_expr_in_args/1,
+    info_if_expr_in_args/1,
+    info_receive_expr_in_args/0,
+    info_with_arg_side_effect/1,
     info_in_case_body/0,
     info_in_nested_case_body/0,
     info_as_case_scrutinee/0,
@@ -86,6 +87,14 @@
 ]).
 -endif.
 
+-elvis([
+    {elvis_style, no_block_expressions, disable},
+    {elvis_style, no_god_modules, disable},
+    {elvis_style, no_if_expression, disable},
+    {elvis_style, no_single_clause_case, disable},
+    {elvis_style, no_receive_without_timeout, disable}
+]).
+
 new_helper_record() ->
     #helper_record{plain_field = undefined, typed_field = undefined, default_field = default}.
 
@@ -104,30 +113,39 @@ info_1arg() -> lager:info("hello world").
 info_static_meta() -> lager:info([{request_id, <<"abc">>}], "handling request", []).
 info_dynamic_meta(ExtraMeta) -> lager:info(ExtraMeta, "handling request", []).
 info_literal_args() -> lager:info("~p", [hello]).
-info_lazy_args() -> lager:info("~s", [erlang:integer_to_list(42)]).
-info_lazy_infix_op(X) -> lager:info("~p", [X + 1]).
-info_lazy_prefix_op(X) -> lager:info("~p", [-X]).
-info_lazy_case_expr(X) ->
+info_call_in_args() -> lager:info("~s", [erlang:integer_to_list(42)]).
+info_infix_op_in_args(X) -> lager:info("~p", [X + 1]).
+info_prefix_op_in_args(X) -> lager:info("~p", [-X]).
+info_case_expr_in_args(X) ->
     lager:info("~p", [
         case X of
             foo -> bar;
             _ -> other
         end
     ]).
-info_lazy_if_expr(X) ->
+info_if_expr_in_args(X) ->
     lager:info("~p", [
         if
             X =:= foo -> bar;
             true -> other
         end
     ]).
-info_lazy_receive_expr() ->
+info_receive_expr_in_args() ->
     lager:info("~p", [
         receive
             M -> M
         after 0 -> none
         end
     ]).
+
+%% Logs with an argument whose evaluation has an observable side effect (a message
+%% to NotifyPid). Lets the suite assert whether the argument was evaluated at all,
+%% which is the defining property of the `logger:allow/2' level gate.
+info_with_arg_side_effect(NotifyPid) -> lager:info("~p", [notify_arg_evaluated(NotifyPid)]).
+
+notify_arg_evaluated(NotifyPid) ->
+    NotifyPid ! arg_evaluated,
+    evaluated.
 
 info_in_case_body() ->
     case ok of

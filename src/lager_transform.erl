@@ -219,31 +219,37 @@ walk_function_statements(Node, _Context) ->
 
 transform_call(Anno, Level, Args, Module, Context) ->
     TransformedArgs = transform_call_args(Anno, Args, Module, Context),
-    NewInvocationClause = {remote, Anno, {atom, Anno, logger}, {atom, Anno, Level}},
-    {call, Anno, NewInvocationClause, TransformedArgs}.
+    % Gate the whole call on a compile-time-inlined `logger:allow/2' check, exactly as
+    % logger's own `?LOG_*' macros do (and as lager's original inlined level check did).
+    % The format string, arguments and metadata textually live only in the `true' branch,
+    % so they are evaluated solely when the level is enabled - no fun-wrapping or cost
+    % heuristic needed, and side effects in the arguments fire exactly when the message is
+    % emitted.
+    %
+    % The enabled branch dispatches through `logger:macro_log/5' rather than
+    % `logger:Level/3': like the macros, this goes straight to `logger:log_allowed/4' and
+    % skips the redundant `logger_config:allow/2' check that `logger:Level/3' (via
+    % `do_log/3') would otherwise repeat. With an empty location map it is otherwise
+    % identical to the `do_log/3' path. `macro_log/5' has been exported for exactly this
+    % purpose since logger landed in OTP 21.
+    AllowCall =
+        {call, Anno, {remote, Anno, {atom, Anno, logger}, {atom, Anno, allow}}, [
+            {atom, Anno, Level},
+            {atom, Anno, Context#function_context.module}
+        ]},
+    LogCall =
+        {call, Anno, {remote, Anno, {atom, Anno, logger}, {atom, Anno, macro_log}}, [
+            {map, Anno, []},
+            {atom, Anno, Level}
+            | TransformedArgs
+        ]},
+    {'case', Anno, AllowCall, [
+        {clause, Anno, [{atom, Anno, true}], [], [LogCall]},
+        {clause, Anno, [{atom, Anno, false}], [], [{atom, Anno, ok}]}
+    ]}.
 
 transform_call_args(Anno, Args, Module, Context) ->
     Metadata = logging_call_metadata(Anno, Args, Module, Context),
-    case is_formatting_prepararion_presumably_expensive(Args) of
-        false ->
-            transform_call_args_with_immediate_formatting(Anno, Args, Metadata);
-        true ->
-            transform_call_args_with_lazy_formatting(Anno, Args, Metadata)
-    end.
-
-is_formatting_prepararion_presumably_expensive(Args) ->
-    case Args of
-        [Fmt] ->
-            is_term_evaluation_presumably_expensive(Fmt);
-        [Fmt, FmtArgs] ->
-            is_term_evaluation_presumably_expensive(Fmt) orelse
-                is_term_evaluation_presumably_expensive(FmtArgs);
-        [_, Fmt, FmtArgs] ->
-            is_term_evaluation_presumably_expensive(Fmt) orelse
-                is_term_evaluation_presumably_expensive(FmtArgs)
-    end.
-
-transform_call_args_with_immediate_formatting(Anno, Args, Metadata) ->
     case Args of
         [Fmt] ->
             % empty list
@@ -254,39 +260,6 @@ transform_call_args_with_immediate_formatting(Anno, Args, Metadata) ->
         [_, Fmt, FmtArgs] ->
             [Fmt, FmtArgs, Metadata]
     end.
-
-transform_call_args_with_lazy_formatting(Anno, Args, Metadata) ->
-    case Args of
-        [Fmt] ->
-            % empty list
-            FmtArgs = {nil, Anno},
-            {MsgFun, MsgArgs} = lazy_message_fun_and_args(Anno, Fmt, FmtArgs),
-            [MsgFun, MsgArgs, Metadata];
-        [Fmt, FmtArgs] ->
-            {MsgFun, MsgArgs} = lazy_message_fun_and_args(Anno, Fmt, FmtArgs),
-            [MsgFun, MsgArgs, Metadata];
-        [_, Fmt, FmtArgs] ->
-            {MsgFun, MsgArgs} = lazy_message_fun_and_args(Anno, Fmt, FmtArgs),
-            [MsgFun, MsgArgs, Metadata]
-    end.
-
-lazy_message_fun_and_args(Anno, Fmt, FmtArgs) ->
-    Fun = lazy_message_fun(Anno, Fmt, FmtArgs),
-    Args = {atom, Anno, no_args},
-    {Fun, Args}.
-
-lazy_message_fun(Anno, Fmt, FmtArgs) ->
-    % anonymous fun declaration
-    {'fun', Anno,
-        {clauses, [
-            {clause, Anno,
-                % fun arguments pattern (`no_args')
-                [{atom, Anno, no_args}],
-                % fun guards (none)
-                [],
-                % fun body (`{Fmt, FmtArgs}')
-                [{tuple, Anno, [Fmt, FmtArgs]}]}
-        ]}}.
 
 %%-------------------------------------------------------------------
 %% Internal Function Definitions - Logging Call Metadata
@@ -424,31 +397,6 @@ check_for_unsupported_options(Options) ->
         end,
         Options
     ).
-
-% XXX: should binary construction be considered expensive?
-is_term_evaluation_presumably_expensive(Term) ->
-    erl_syntax_lib:fold(
-        fun(Node, Acc) -> Acc orelse is_expensive_ast_node(Node) end,
-        false,
-        Term
-    ).
-
-is_expensive_ast_node(Node) ->
-    case erl_syntax:type(Node) of
-        % any function call
-        application -> true;
-        % receive (with or without timeout)
-        receive_expr -> true;
-        % unary operator (e.g. `-')
-        prefix_expr -> true;
-        % binary operator (e.g. `+')
-        infix_expr -> true;
-        % case block
-        case_expr -> true;
-        % if block
-        if_expr -> true;
-        _ -> false
-    end.
 
 %write_terms(FilenameSuffix, List) ->
 %    {attribute, _Anno, module, Module} = lists:keyfind(module, 3, List),

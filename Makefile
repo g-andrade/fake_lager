@@ -61,7 +61,7 @@ check-formatted:
 .PHONY: check-formatted
 
 xref:
-	@rebar3 xref
+	@rebar3 as check xref
 .PHONY: xref
 
 hank-dead-code-cleaner:
@@ -81,7 +81,7 @@ elvis-linter:
 .PHONY: elvis-linter
 
 dialyzer:
-	@rebar3 dialyzer
+	@rebar3 as check dialyzer
 .PHONY: dialyzer
 
 ## Shell, docs and publication

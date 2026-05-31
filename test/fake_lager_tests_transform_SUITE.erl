@@ -315,11 +315,11 @@ metadata_contains_correct_line(_Config) ->
     ?assertEqual(ExpectedLine, maps:get(line, Meta)).
 
 %% Process metadata must merge into transform-emitted events alongside the
-%% compile-time-injected metadata. On a key conflict the transform's injected
-%% value wins, since it is passed as call-site metadata: here a bogus process
-%% `mfa' must not override the real one the transform computed.
+%% compile-time-injected location (mfa/file/line). The injected mfa is passed in
+%% the logger:location() map, which per logger's merge order is the lowest
+%% priority source; with no conflicting key in process metadata both surface.
 process_metadata_merged_into_event(_Config) ->
-    ok = logger:set_process_metadata(#{proc_key => from_proc, mfa => {bogus, bogus, 0}}),
+    ok = logger:set_process_metadata(#{proc_key => from_proc}),
     ?H:info("test", []),
     #{meta := Meta} = receive_log_event(),
     ?assertEqual(from_proc, maps:get(proc_key, Meta)),

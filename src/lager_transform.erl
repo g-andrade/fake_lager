@@ -218,7 +218,9 @@ walk_function_statements(Node, _Context) ->
 %%-------------------------------------------------------------------
 
 transform_call(Anno, Level, Args, Module, Context) ->
-    TransformedArgs = transform_call_args(Anno, Args, Module, Context),
+    {Format, FormatArgs} = format_and_args(Anno, Args),
+    Location = location_metadata(Anno, Context),
+    CallMetadata = call_metadata(Anno, Args, Module),
     % Gate the whole call on a compile-time-inlined `logger:allow/2' check, exactly as
     % logger's own `?LOG_*' macros do (and as lager's original inlined level check did).
     % The format string, arguments and metadata textually live only in the `true' branch,
@@ -229,9 +231,16 @@ transform_call(Anno, Level, Args, Module, Context) ->
     % The enabled branch dispatches through `logger:macro_log/5' rather than
     % `logger:Level/3': like the macros, this goes straight to `logger:log_allowed/4' and
     % skips the redundant `logger_config:allow/2' check that `logger:Level/3' (via
-    % `do_log/3') would otherwise repeat. With an empty location map it is otherwise
-    % identical to the `do_log/3' path. `macro_log/5' has been exported for exactly this
+    % `do_log/3') would otherwise repeat. `macro_log/5' has been exported for exactly this
     % purpose since logger landed in OTP 21.
+    %
+    % The first argument is a populated `logger:location()' map carrying `mfa'/`file'/`line',
+    % built exactly as logger's own `?LOCATION' macro does. Passing a populated location
+    % (rather than `#{}') keeps the call within `macro_log/5's published contract -
+    % `location()' mandates those three keys - so dialyzer/eqwalizer runs over downstream
+    % transformed modules stay clean. Per logger's documented merge order the location is
+    % also the lowest-priority metadata source, overridden by process and call-site metadata,
+    % matching standard logger semantics.
     AllowCall =
         {call, Anno, {remote, Anno, {atom, Anno, logger}, {atom, Anno, allow}}, [
             {atom, Anno, Level},
@@ -239,69 +248,79 @@ transform_call(Anno, Level, Args, Module, Context) ->
         ]},
     LogCall =
         {call, Anno, {remote, Anno, {atom, Anno, logger}, {atom, Anno, macro_log}}, [
-            {map, Anno, []},
-            {atom, Anno, Level}
-            | TransformedArgs
+            Location,
+            {atom, Anno, Level},
+            Format,
+            FormatArgs,
+            CallMetadata
         ]},
     {'case', Anno, AllowCall, [
         {clause, Anno, [{atom, Anno, true}], [], [LogCall]},
         {clause, Anno, [{atom, Anno, false}], [], [{atom, Anno, ok}]}
     ]}.
 
-transform_call_args(Anno, Args, Module, Context) ->
-    Metadata = logging_call_metadata(Anno, Args, Module, Context),
+format_and_args(Anno, Args) ->
     case Args of
-        [Fmt] ->
-            % empty list
-            FmtArgs = {nil, Anno},
-            [Fmt, FmtArgs, Metadata];
-        [Fmt, FmtArgs] ->
-            [Fmt, FmtArgs, Metadata];
-        [_, Fmt, FmtArgs] ->
-            [Fmt, FmtArgs, Metadata]
+        [Format] ->
+            % empty argument list
+            {Format, {nil, Anno}};
+        [Format, FormatArgs] ->
+            {Format, FormatArgs};
+        [_Metadata, Format, FormatArgs] ->
+            {Format, FormatArgs}
     end.
 
 %%-------------------------------------------------------------------
 %% Internal Function Definitions - Logging Call Metadata
 %%-------------------------------------------------------------------
 
-logging_call_metadata(Anno, Args, Module, Context) ->
-    BaseMetadata = base_call_metadata(Anno, Module, Context),
+% Builds the `logger:location()' map (`macro_log/5's first argument): the
+% `mfa'/`file'/`line' triple, exactly as logger's `?LOCATION' macro. All three
+% keys are mandatory in `location()', so `file' is always emitted - falling back
+% to the empty string in the (practically impossible) absence of a `-file'
+% attribute - to keep the literal a valid `location()' for downstream dialyzer.
+location_metadata(Anno, Context) ->
+    Line = erl_anno:line(Anno),
+    File =
+        case Context#function_context.file of
+            undefined -> "";
+            DefinedFile -> DefinedFile
+        end,
+    {map, Anno, [
+        {map_field_assoc, Anno, {atom, Anno, mfa},
+            {tuple, Anno, [
+                {atom, Anno, Context#function_context.module},
+                {atom, Anno, Context#function_context.name},
+                {integer, Anno, Context#function_context.arity}
+            ]}},
+        {map_field_assoc, Anno, {atom, Anno, file}, {string, Anno, File}},
+        {map_field_assoc, Anno, {atom, Anno, line}, {integer, Anno, Line}}
+    ]}.
+
+% Builds the call metadata (`macro_log/5's last argument): `lager_sink' for extra
+% sinks plus any user-supplied metadata. The `mfa'/`file'/`line' triple lives in
+% the location map instead (see location_metadata/2).
+call_metadata(Anno, Args, Module) ->
+    SinkMetadata = sink_metadata(Anno, Module),
     case Args of
         [_Fmt] ->
-            BaseMetadata;
+            SinkMetadata;
         [_Fmt, _FmtArgs] ->
-            BaseMetadata;
+            SinkMetadata;
         [ExtraMetadataList, _Fmt, _FmtArgs] ->
-            extended_call_metadata(Anno, BaseMetadata, ExtraMetadataList)
+            extended_call_metadata(Anno, SinkMetadata, ExtraMetadataList)
     end.
 
-base_call_metadata(Anno, Module, Context) ->
-    Line = erl_anno:line(Anno),
-    {map, Anno,
-        % mfa => {module(), atom(), arity()}
-        [
-            {map_field_assoc, Anno, {atom, Anno, mfa},
-                {tuple, Anno, [
-                    {atom, Anno, Context#function_context.module},
-                    {atom, Anno, Context#function_context.name},
-                    {integer, Anno, Context#function_context.arity}
-                ]}}
-        ] ++
-            % file => string()
-            case Context#function_context.file of
-                undefined -> [];
-                File -> [{map_field_assoc, Anno, {atom, Anno, file}, {string, Anno, File}}]
-            end ++
-            % line => integer()
-            [{map_field_assoc, Anno, {atom, Anno, line}, {integer, Anno, Line}}] ++
-            % lager_sink => atom()
-            case Module of
-                lager ->
-                    [];
-                CustomSink ->
-                    [{map_field_assoc, Anno, {atom, Anno, lager_sink}, {atom, Anno, CustomSink}}]
-            end}.
+sink_metadata(Anno, Module) ->
+    Associations =
+        % lager_sink => atom()
+        case Module of
+            lager ->
+                [];
+            CustomSink ->
+                [{map_field_assoc, Anno, {atom, Anno, lager_sink}, {atom, Anno, CustomSink}}]
+        end,
+    {map, Anno, Associations}.
 
 extended_call_metadata(Anno, BaseMetadata, ExtraMetadataList) ->
     case transform_metadata_list_into_map_field_associations(ExtraMetadataList) of

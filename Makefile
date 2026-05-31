@@ -58,10 +58,12 @@ check-formatted:
 	else \
 		echo >&2 "WARN: skipping rebar3 erlfmt check"; \
 	fi
+.NOTPARALLEL: check-formatted
 .PHONY: check-formatted
 
 xref:
 	@rebar3 as check xref
+.NOTPARALLEL: xref
 .PHONY: xref
 
 hank-dead-code-cleaner:
@@ -70,6 +72,7 @@ hank-dead-code-cleaner:
 	else \
 		echo >&2 "WARN: skipping rebar3_hank check"; \
 	fi
+.NOTPARALLEL: hank-dead-code-cleaner
 .PHONY: hank-dead-code-cleaner
 
 elvis-linter:
@@ -78,6 +81,7 @@ elvis-linter:
 	else \
 		echo >&2 "WARN: skipping rebar3_lint check"; \
 	fi
+.NOTPARALLEL: elvis-linter
 .PHONY: elvis-linter
 
 dialyzer:

@@ -103,7 +103,7 @@ doc: SOURCE_REF := $(shell git describe --tags --exact-match 2>/dev/null || git 
 doc: tmp/ex_doc
 doc:
 	rebar3 as docs edoc; \
-		./tmp/ex_doc "fake_lager" "${SOURCE_REF}" \
+		./tmp/ex_doc "lager" "${SOURCE_REF}" \
 		_build/docs/lib/lager/ebin \
 		-c ex_doc.config \
 		--source-ref "${SOURCE_REF}";

@@ -20,6 +20,10 @@
 
 -module(lager).
 
+-ifdef(E48).
+-moduledoc "Lager API".
+-endif.
+
 -include("lager.hrl").
 
 %%-------------------------------------------------------------------

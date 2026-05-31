@@ -1,5 +1,9 @@
 -module(lager_msg).
 
+-ifdef(E48).
+-moduledoc "--".
+-endif.
+
 -include("lager.hrl").
 
 %%-------------------------------------------------------------------

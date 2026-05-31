@@ -20,6 +20,10 @@
 
 -module(lager_transform).
 
+-ifdef(E48).
+-moduledoc "Parse transform".
+-endif.
+
 -include_lib("stdlib/include/assert.hrl").
 -include("lager.hrl").
 

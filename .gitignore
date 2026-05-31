@@ -12,3 +12,4 @@ doc/
 erl_crash.dump
 log
 rebar3.crashdump
+/tmp/

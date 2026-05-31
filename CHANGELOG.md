@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 
+- test coverage of `lager_transform`
 - OTP 28.5 to CI
 - OTP 29.0 to CI
 

@@ -34,6 +34,7 @@
     debug/2,
     info/2,
     new_helper_record/0,
+    info_at_known_line/0,
     notice/2,
     warning/2,
     error/2,
@@ -113,6 +114,15 @@ emergency(Fmt, Args) -> lager:emergency(Fmt, Args).
 none() -> lager:none("should not be logged").
 
 info_1arg() -> lager:info("hello world").
+
+%% Logs and returns the source line of the `lager:info' call itself, so the
+%% suite can assert the transform injects the exact call-site line (not merely
+%% some integer). `?LINE' below is the `ExpectedLine = ...' line; the logging
+%% call sits one line further down, which is the line the transform records.
+info_at_known_line() ->
+    ExpectedLine = ?LINE + 1,
+    lager:info("at known line", []),
+    ExpectedLine.
 info_static_meta() -> lager:info([{request_id, <<"abc">>}], "handling request", []).
 info_dynamic_meta(ExtraMeta) -> lager:info(ExtraMeta, "handling request", []).
 info_literal_args() -> lager:info("~p", [hello]).

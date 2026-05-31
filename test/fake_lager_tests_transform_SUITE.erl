@@ -53,8 +53,10 @@
     all_levels_produce_logger_events/1,
     none_level_produces_no_logger_event/1,
     metadata_contains_mfa/1,
+    metadata_mfa_reflects_enclosing_function/1,
     metadata_contains_file/1,
-    metadata_contains_line/1,
+    metadata_contains_correct_line/1,
+    process_metadata_merged_into_event/1,
     one_arg_form_is_supported/1,
     two_arg_form_is_supported/1,
     three_arg_form_with_static_metadata/1,
@@ -149,8 +151,10 @@ groups() ->
                 all_levels_produce_logger_events,
                 none_level_produces_no_logger_event,
                 metadata_contains_mfa,
+                metadata_mfa_reflects_enclosing_function,
                 metadata_contains_file,
-                metadata_contains_line,
+                metadata_contains_correct_line,
+                process_metadata_merged_into_event,
                 one_arg_form_is_supported,
                 two_arg_form_is_supported,
                 three_arg_form_with_static_metadata,
@@ -240,6 +244,7 @@ end_per_group(_GroupName, _Config) ->
     ok.
 
 init_per_testcase(_TestCase, Config) ->
+    logger:unset_process_metadata(),
     ok = logger:add_handler(?CAPTURE_HANDLER, fake_lager_test_capture, #{
         config => #{owner => self()},
         level => all
@@ -247,6 +252,7 @@ init_per_testcase(_TestCase, Config) ->
     Config.
 
 end_per_testcase(_TestCase, _Config) ->
+    logger:unset_process_metadata(),
     _ = logger:remove_handler(?CAPTURE_HANDLER),
     ok.
 
@@ -279,8 +285,18 @@ none_level_produces_no_logger_event(_Config) ->
 metadata_contains_mfa(_Config) ->
     ?H:info("test", []),
     #{meta := Meta} = receive_log_event(),
-    ?assertMatch(
+    ?assertEqual(
         {fake_lager_tests_transform_helper, info, 2},
+        maps:get(mfa, Meta)
+    ).
+
+%% The injected `mfa' must reflect the *enclosing* function, not the log call.
+%% `info_1arg/0' is a zero-arity function, so the arity in `mfa' must be 0.
+metadata_mfa_reflects_enclosing_function(_Config) ->
+    ?H:info_1arg(),
+    #{meta := Meta} = receive_log_event(),
+    ?assertEqual(
+        {fake_lager_tests_transform_helper, info_1arg, 0},
         maps:get(mfa, Meta)
     ).
 
@@ -291,10 +307,23 @@ metadata_contains_file(_Config) ->
     ?assert(is_list(File)),
     ?assert(lists:suffix("fake_lager_tests_transform_helper.erl", File)).
 
-metadata_contains_line(_Config) ->
+%% Assert the *exact* call-site line, not merely that some integer is present.
+%% The helper reports the line its `lager:info' call sits on (via `?LINE').
+metadata_contains_correct_line(_Config) ->
+    ExpectedLine = ?H:info_at_known_line(),
+    #{meta := Meta} = receive_log_event(),
+    ?assertEqual(ExpectedLine, maps:get(line, Meta)).
+
+%% Process metadata must merge into transform-emitted events alongside the
+%% compile-time-injected metadata. On a key conflict the transform's injected
+%% value wins, since it is passed as call-site metadata: here a bogus process
+%% `mfa' must not override the real one the transform computed.
+process_metadata_merged_into_event(_Config) ->
+    ok = logger:set_process_metadata(#{proc_key => from_proc, mfa => {bogus, bogus, 0}}),
     ?H:info("test", []),
     #{meta := Meta} = receive_log_event(),
-    ?assert(is_integer(maps:get(line, Meta))).
+    ?assertEqual(from_proc, maps:get(proc_key, Meta)),
+    ?assertEqual({fake_lager_tests_transform_helper, info, 2}, maps:get(mfa, Meta)).
 
 one_arg_form_is_supported(_Config) ->
     ?H:info_1arg(),

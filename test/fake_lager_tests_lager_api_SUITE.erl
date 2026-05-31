@@ -52,6 +52,8 @@
     md_with_non_list_raises_badarg/1,
     log_3_with_pid/1,
     log_3_with_metadata_list/1,
+    log_converts_module_function_to_mfa_metadata/1,
+    log_merges_process_metadata/1,
     log_4_with_format_and_args/1,
     log_5_with_bad_sink_returns_error/1,
     log_unsafe/1,
@@ -77,6 +79,7 @@
 %% ------------------------------------------------------------------
 
 -elvis([
+    {elvis_style, no_god_modules, disable},
     {elvis_style, simplify_anonymous_functions, disable}
 ]).
 
@@ -99,6 +102,8 @@ groups() ->
                 md_with_non_list_raises_badarg,
                 log_3_with_pid,
                 log_3_with_metadata_list,
+                log_converts_module_function_to_mfa_metadata,
+                log_merges_process_metadata,
                 log_4_with_format_and_args,
                 log_5_with_bad_sink_returns_error,
                 log_unsafe,
@@ -161,13 +166,44 @@ md_converts_module_function_to_mfa(_Config) ->
 md_with_non_list_raises_badarg(_Config) ->
     ?assertError(badarg, lager:md(not_a_list)).
 
+%% `lager:log/3' with a process argument must surface it as `pid' metadata with
+%% the exact value passed. An atom (a valid `Process') is used so the assertion
+%% cannot be satisfied by logger's own default `pid => self()'.
 log_3_with_pid(_Config) ->
-    ok = lager:log(info, self(), "test message"),
-    ?assertMatch(#{level := info}, receive_log_event()).
+    ok = lager:log(info, some_named_proc, "test message"),
+    #{level := Level, meta := Meta} = receive_log_event(),
+    ?assertEqual(info, Level),
+    ?assertEqual(some_named_proc, maps:get(pid, Meta)).
 
+%% A metadata proplist must reach the emitted event as map entries, value-exact.
 log_3_with_metadata_list(_Config) ->
-    ok = lager:log(info, [{key, val}], "test message"),
-    ?assertMatch(#{level := info}, receive_log_event()).
+    ok = lager:log(info, [{request_id, <<"abc">>}], "test message"),
+    #{level := Level, meta := Meta} = receive_log_event(),
+    ?assertEqual(info, Level),
+    ?assertEqual(<<"abc">>, maps:get(request_id, Meta)).
+
+%% The runtime metadata translation (lager:logger_metadata/1) must fold a
+%% `module'/`function'/`arity' triple into a single `mfa' tuple and drop the
+%% individual keys - mirroring on the emit path what `md/1' does for process
+%% metadata.
+log_converts_module_function_to_mfa_metadata(_Config) ->
+    ok = lager:log(info, [{module, my_mod}, {function, my_fun}, {arity, 2}], "test message"),
+    #{meta := Meta} = receive_log_event(),
+    ?assertEqual({my_mod, my_fun, 2}, maps:get(mfa, Meta)),
+    ?assertNot(maps:is_key(module, Meta)),
+    ?assertNot(maps:is_key(function, Meta)),
+    ?assertNot(maps:is_key(arity, Meta)).
+
+%% Process metadata (set here via lager:md/1, i.e. logger:set_process_metadata/1)
+%% must be merged into the emitted event, with call-site metadata winning on a
+%% key conflict.
+log_merges_process_metadata(_Config) ->
+    ok = lager:md([{proc_key, from_proc}, {shared, from_proc}]),
+    ok = lager:log(info, [{call_key, from_call}, {shared, from_call}], "test message"),
+    #{meta := Meta} = receive_log_event(),
+    ?assertEqual(from_proc, maps:get(proc_key, Meta)),
+    ?assertEqual(from_call, maps:get(call_key, Meta)),
+    ?assertEqual(from_call, maps:get(shared, Meta)).
 
 log_4_with_format_and_args(_Config) ->
     ok = lager:log(info, [], "~p", [hello]),

@@ -34,15 +34,6 @@ begin
             % Take dev helpers away as they're no longer compatible with OTP 25
             TakeOutHank(TakeOutErlFmt(TakeOutElvis(CONFIG)));
         %
-        29 ->
-            % Remove after the issues below are resolved and fixed versions of
-            % `katana_code` and `rebar3_hank` are published.
-            %
-            % * https://github.com/inaka/katana-code/issues/101
-            % * https://github.com/erlang/otp/issues/11155
-            %
-            TakeOutHank(CONFIG);
-        %
         _ ->
             CONFIG
     catch

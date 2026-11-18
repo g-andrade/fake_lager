@@ -307,7 +307,6 @@ info_in_catch_expr() ->
     ok.
 
 -ifdef(NATIVE_RECORDS).
-% erlfmt-ignore
 -record #fake_lager_nr{value}.
 
 info_in_native_record_construction() ->
